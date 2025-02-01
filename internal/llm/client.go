@@ -45,18 +45,11 @@ func NewClient(baseURL string) *Client {
 	return &Client{baseURL: baseURL}
 }
 
-func (c *Client) SummarizeStream(transcript string, callback func(string)) error {
-	prompt := `
-	You are a skilled video summarizer. Please provide a clear, well-structured summary of the following video transcript. Focus on:
-	- Main topics and key points
-	- Important details and insights
-	- Clear structure and readability
-
-	Transcript:
-	`
+func (c *Client) SummarizeStream(systemPrompt string, modelName string, transcript string, callback func(string)) error {
+	prompt := systemPrompt + "\nTranscript:"
 
 	req := CompletionRequest{
-		Model: "llama-3.2-3b-instruct",
+		Model: modelName,
 		Messages: []Message{
 			{Role: "system", Content: prompt},
 			{Role: "user", Content: transcript},
@@ -122,9 +115,9 @@ func (c *Client) SummarizeStream(transcript string, callback func(string)) error
 }
 
 // Regular non-streaming method kept for reference
-func (c *Client) Summarize(transcript string) (string, error) {
+func (c *Client) Summarize(systemPrompt string, modelName string, transcript string) (string, error) {
 	var summary strings.Builder
-	err := c.SummarizeStream(transcript, func(chunk string) {
+	err := c.SummarizeStream(systemPrompt, modelName, transcript, func(chunk string) {
 		summary.WriteString(chunk)
 	})
 	if err != nil {

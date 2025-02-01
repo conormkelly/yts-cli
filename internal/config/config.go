@@ -1,105 +1,139 @@
 package config
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
+
+	"github.com/spf13/viper"
 )
 
+// Config holds all configuration values
 type Config struct {
-	// LLM Configuration
-	LLMBaseURL string `json:"llm_base_url"`
-	Model      string `json:"model"`
+	LLMBaseURL   string        `mapstructure:"llm_base_url"`
+	Model        string        `mapstructure:"model"`
+	OutputFormat string        `mapstructure:"output_format"`
+	SummaryType  string        `mapstructure:"summary_type"`
+	MaxRetries   int           `mapstructure:"max_retries"`
+	Timeout      int           `mapstructure:"timeout_seconds"`
+	Summaries    SummaryConfig `mapstructure:"summaries"`
+}
 
-	// Output Configuration
-	OutputFormat string `json:"output_format"`
-	SummaryType  string `json:"summary_type"` // "short", "medium", "long"
+// SummaryConfig holds the different summary templates
+type SummaryConfig struct {
+	Short  SummaryTemplate `mapstructure:"short"`
+	Medium SummaryTemplate `mapstructure:"medium"`
+	Long   SummaryTemplate `mapstructure:"long"`
+}
 
-	// API Configuration
-	MaxRetries int `json:"max_retries"`
-	Timeout    int `json:"timeout_seconds"`
+type SummaryTemplate struct {
+	SystemPrompt string `mapstructure:"system_prompt"`
 }
 
 const (
-	defaultConfigFile = "config.json"
-	defaultLLMURL     = "http://localhost:1234"
-	defaultModel      = "llama-3.2-3b-instruct"
+	defaultLLMURL  = "http://localhost:1234"
+	defaultModel   = "llama-3.2-3b-instruct"
+	configFileName = "config"
+	configFileType = "json"
+	configDirName  = "yts"
 )
 
-var DefaultConfig = Config{
-	LLMBaseURL:   defaultLLMURL,
-	Model:        defaultModel,
-	OutputFormat: "markdown",
-	SummaryType:  "medium",
-	MaxRetries:   3,
-	Timeout:      30,
-}
-
-// Load reads the configuration file from the user's config directory
-func Load() (*Config, error) {
-	configDir, err := os.UserConfigDir()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get config directory: %w", err)
-	}
-
-	ytsConfigDir := filepath.Join(configDir, "yts")
-	if err := os.MkdirAll(ytsConfigDir, 0755); err != nil {
-		return nil, fmt.Errorf("failed to create config directory: %w", err)
-	}
-
-	configPath := filepath.Join(ytsConfigDir, defaultConfigFile)
-
-	// If config doesn't exist, create it with defaults
-	if _, err := os.Stat(configPath); os.IsNotExist(err) {
-		return createDefaultConfig(configPath)
-	}
-
-	data, err := os.ReadFile(configPath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read config file: %w", err)
-	}
-
-	var config Config
-	if err := json.Unmarshal(data, &config); err != nil {
-		return nil, fmt.Errorf("failed to parse config file: %w", err)
-	}
-
-	return &config, nil
-}
-
-// Save writes the current configuration to disk
-func (c *Config) Save() error {
+// Initialize sets up Viper with our configuration
+func Initialize() error {
+	// Get user config directory
 	configDir, err := os.UserConfigDir()
 	if err != nil {
 		return fmt.Errorf("failed to get config directory: %w", err)
 	}
 
-	configPath := filepath.Join(configDir, "yts", defaultConfigFile)
-
-	data, err := json.MarshalIndent(c, "", "    ")
-	if err != nil {
-		return fmt.Errorf("failed to marshal config: %w", err)
+	// Ensure our config directory exists
+	ytsConfigDir := filepath.Join(configDir, configDirName)
+	if err := os.MkdirAll(ytsConfigDir, 0755); err != nil {
+		return fmt.Errorf("failed to create config directory: %w", err)
 	}
 
-	if err := os.WriteFile(configPath, data, 0644); err != nil {
-		return fmt.Errorf("failed to write config file: %w", err)
+	// Set up Viper
+	viper.SetConfigName(configFileName)
+	viper.SetConfigType(configFileType)
+	viper.AddConfigPath(ytsConfigDir)
+
+	// Set defaults
+	setDefaults()
+
+	// Bind environment variables
+	bindEnvVars()
+
+	// Try to read config file
+	if err := viper.ReadInConfig(); err != nil {
+		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
+			// Config file doesn't exist, create it with defaults
+			configPath := filepath.Join(ytsConfigDir, configFileName+"."+configFileType)
+			if err := viper.SafeWriteConfigAs(configPath); err != nil {
+				return fmt.Errorf("failed to write default config: %w", err)
+			}
+		} else {
+			return fmt.Errorf("failed to read config: %w", err)
+		}
 	}
 
 	return nil
 }
 
-func createDefaultConfig(path string) (*Config, error) {
-	config := DefaultConfig
-
-	data, err := json.MarshalIndent(config, "", "    ")
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal default config: %w", err)
+// GetConfig returns the current configuration
+func GetConfig() (*Config, error) {
+	var config Config
+	if err := viper.Unmarshal(&config); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal config: %w", err)
 	}
-
-	if err := os.WriteFile(path, data, 0644); err != nil {
-		return nil, fmt.Errorf("failed to write default config: %w", err)
-	}
-
 	return &config, nil
+}
+
+func setDefaults() {
+	viper.SetDefault("llm_base_url", defaultLLMURL)
+	viper.SetDefault("model", defaultModel)
+	viper.SetDefault("output_format", "markdown")
+	viper.SetDefault("summary_type", "medium")
+	viper.SetDefault("max_retries", 3)
+	viper.SetDefault("timeout_seconds", 30)
+
+	// Set summary template defaults
+	viper.SetDefault("summaries.short.system_prompt", `Create a concise summary of the following video transcript. Focus on:
+- Key points only (3-5 bullet points)
+- Main conclusion or takeaway
+- Keep it brief and to the point`)
+
+	viper.SetDefault("summaries.medium.system_prompt", `Provide a comprehensive summary of the following video transcript. Include:
+- Main topics and key points
+- Important details and insights
+- Supporting examples or evidence
+- Organize with clear headings`)
+
+	viper.SetDefault("summaries.long.system_prompt", `Create a detailed analysis of the following video transcript. Include:
+- Thorough coverage of all major topics
+- Detailed examples and supporting information
+- Analysis of key concepts and their relationships
+- Clear structure with sections and subsections
+- Any relevant technical details or specifications`)
+}
+
+func bindEnvVars() {
+	viper.BindEnv("llm_base_url", "YTS_LLM_URL")
+	viper.BindEnv("model", "YTS_MODEL")
+}
+
+// GetSystemPrompt returns the appropriate system prompt based on summary type
+func GetSystemPrompt(summaryType string) string {
+	cfg, err := GetConfig()
+	if err != nil {
+		return "" // Handle error appropriately in your application
+	}
+
+	switch summaryType {
+	case "short":
+		return cfg.Summaries.Short.SystemPrompt
+	case "long":
+		return cfg.Summaries.Long.SystemPrompt
+	default:
+		return cfg.Summaries.Medium.SystemPrompt
+	}
 }
