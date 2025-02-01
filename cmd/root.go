@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/conormkelly/yts-cli/internal/config"
+	"github.com/conormkelly/yts-cli/internal/llm"
+	"github.com/conormkelly/yts-cli/internal/transcript"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/yourusername/yts-cli/internal/config"
-	"github.com/yourusername/yts-cli/internal/llm"
-	"github.com/yourusername/yts-cli/internal/transcript"
 )
 
 var (

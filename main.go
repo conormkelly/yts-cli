@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/yourusername/yts-cli/cmd"
+	"github.com/conormkelly/yts-cli/cmd"
 )
 
 func main() {

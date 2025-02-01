@@ -24,8 +24,7 @@ var versionCmd = &cobra.Command{
 - Semantic version number
 - Git commit hash
 - Build date
-- Go version used for compilation
-- Supported platforms`,
+- Go version used for compilation`,
 	Run: func(cmd *cobra.Command, args []string) {
 		// Format the version information
 		versionInfo := []string{
@@ -34,26 +33,14 @@ var versionCmd = &cobra.Command{
 			fmt.Sprintf("Built:      %s", buildDate),
 			fmt.Sprintf("Go version: %s", goVersion),
 			fmt.Sprintf("OS/Arch:    %s/%s", runtime.GOOS, runtime.GOARCH),
-			fmt.Sprintf("Supported platforms: %s", getSupportedPlatforms()),
 		}
 
 		// Print version information
-		fmt.Println("YouTube Transcript Summarizer (YTS) CLI")
-		fmt.Println(strings.Repeat("-", 50))
+		ytsCliFullName := "YouTube Transcript Summarizer (YTS) CLI"
+		fmt.Println(ytsCliFullName)
+		fmt.Println(strings.Repeat("-", len(ytsCliFullName)))
 		fmt.Println(strings.Join(versionInfo, "\n"))
 	},
-}
-
-// getSupportedPlatforms returns a string of supported OS/Arch combinations
-func getSupportedPlatforms() string {
-	platforms := []string{
-		"linux/amd64",
-		"linux/arm64",
-		"darwin/amd64",
-		"darwin/arm64",
-		"windows/amd64",
-	}
-	return strings.Join(platforms, ", ")
 }
 
 func init() {
