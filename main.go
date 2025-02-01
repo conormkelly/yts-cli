@@ -28,12 +28,13 @@ func main() {
 		log.Fatalf("Failed to fetch transcript: %v", err)
 	}
 
-	// Generate summary
+	// Generate summary using streaming
 	fmt.Println("\nGenerating summary...")
-	summary, err := llmClient.Summarize(text)
+	err = llmClient.SummarizeStream(text, func(chunk string) {
+		fmt.Print(chunk)
+	})
 	if err != nil {
 		log.Fatalf("Failed to generate summary: %v", err)
 	}
-
-	fmt.Printf("\nSummary:\n%s\n", summary)
+	fmt.Println() // Add newline at the end
 }
