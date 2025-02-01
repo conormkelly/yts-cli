@@ -10,7 +10,7 @@
         "request": "launch",
         "mode": "debug",
         "program": "${workspaceFolder}/main.go",
-        "args": ["https://www.youtube.com/watch?v=dQw4w9WgXcQ"]
+        "args": ["https://www.youtube.com/watch?v=dQw4w9WgXcQ", "-s"]
     },
         {
             "name": "Launch Package",
