@@ -45,13 +45,12 @@ func NewClient(baseURL string) *Client {
 	return &Client{baseURL: baseURL}
 }
 
-func (c *Client) SummarizeStream(systemPrompt string, modelName string, transcript string, callback func(string)) error {
-	prompt := systemPrompt + "\nTranscript:"
+func (c *Client) Stream(systemPrompt string, modelName string, transcript string, callback func(string)) error {
 
 	req := CompletionRequest{
 		Model: modelName,
 		Messages: []Message{
-			{Role: "system", Content: prompt},
+			{Role: "system", Content: systemPrompt},
 			{Role: "user", Content: transcript},
 		},
 		Stream: true,
@@ -117,7 +116,7 @@ func (c *Client) SummarizeStream(systemPrompt string, modelName string, transcri
 // Regular non-streaming method kept for reference
 func (c *Client) Summarize(systemPrompt string, modelName string, transcript string) (string, error) {
 	var summary strings.Builder
-	err := c.SummarizeStream(systemPrompt, modelName, transcript, func(chunk string) {
+	err := c.Stream(systemPrompt, modelName, transcript, func(chunk string) {
 		summary.WriteString(chunk)
 	})
 	if err != nil {

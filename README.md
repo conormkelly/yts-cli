@@ -49,7 +49,7 @@ The first time you run YTS, it will automatically set up a Python virtual enviro
 Summarize a YouTube video:
 
 ```bash
-yts https://www.youtube.com/watch?v=VIDEO_ID
+yts https://www.youtube.com/watch?v=dQw4w9WgXcQ
 ```
 
 ### Summary Types
@@ -58,10 +58,15 @@ Generate different summary lengths:
 
 ```bash
 # Short summary
-yts https://www.youtube.com/watch?v=VIDEO_ID --summary short
+yts https://www.youtube.com/watch?v=dQw4w9WgXcQ --summary short
+# or
+yts https://www.youtube.com/watch?v=dQw4w9WgXcQ -s
 
 # Detailed summary (default is medium)
-yts https://www.youtube.com/watch?v=VIDEO_ID --summary long
+yts https://www.youtube.com/watch?v=dQw4w9WgXcQ --summary long
+
+# or
+yts https://www.youtube.com/watch?v=dQw4w9WgXcQ -l
 ```
 
 ### Save to File
@@ -69,7 +74,19 @@ yts https://www.youtube.com/watch?v=VIDEO_ID --summary long
 Save the summary to a Markdown file:
 
 ```bash
-yts https://www.youtube.com/watch?v=VIDEO_ID --output summary.md
+yts https://www.youtube.com/watch?v=dQw4w9WgXcQ --output summary.md
+```
+
+### Transcript Formatting
+
+To get a formatted version of the raw transcript without summarization:
+
+```bash
+# Display formatted transcript
+yts transcript https://www.youtube.com/watch?v=dQw4w9WgXcQ
+
+# Save formatted transcript to file
+yts transcript https://www.youtube.com/watch?v=dQw4w9WgXcQ --output my-transcript.md
 ```
 
 ### Configuration
@@ -104,11 +121,11 @@ You can override configuration settings using environment variables:
 
 ## How It Works
 
-1. **Transcript Fetching**: YTS uses the `youtube-transcript-api` Python package to fetch video transcripts. It automatically handles auto-generated captions and multiple language support.
+1. **Transcript Fetching**: YTS uses the `youtube-transcript-api` Python package to fetch video transcripts. It automatically handles auto-generated captions.
 
 2. **AI Processing**: The transcript is processed using a local LLM (default: llama-3.2-3b-instruct) to generate a coherent summary. The summary is streamed in real-time to provide immediate feedback.
 
-3. **Output Generation**: The summary is formatted in Markdown and either displayed in the terminal or saved to a file.
+3. **Output Generation**: The summary is formatted in Markdown and displayed in the terminal, optionally being saved to a file.
 
 ## Development
 

@@ -4,6 +4,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/conormkelly/yts-cli/internal/config"
 	"github.com/conormkelly/yts-cli/internal/llm"
@@ -58,22 +59,21 @@ var rootCmd = &cobra.Command{
 		}
 
 		// Generate summary using streaming
-		err = llmClient.SummarizeStream(systemPrompt, cfg.Model, transcript, func(chunk string) {
+		var summary strings.Builder
+		err = llmClient.Stream(systemPrompt, cfg.Model, transcript, func(chunk string) {
 			fmt.Print(chunk)
+			summary.WriteString(chunk)
 		})
 		if err != nil {
 			return fmt.Errorf("failed to generate summary: %v", err)
 		}
 		// Add newline
+		summary.WriteString("\n")
 		fmt.Println()
 
 		// Handle output file if specified
 		if outputFile != "" {
-			summary, err := llmClient.Summarize(systemPrompt, cfg.Model, transcript)
-			if err != nil {
-				return fmt.Errorf("failed to generate summary for file: %v", err)
-			}
-			if err := os.WriteFile(outputFile, []byte(summary), 0644); err != nil {
+			if err := os.WriteFile(outputFile, []byte(summary.String()), 0644); err != nil {
 				return fmt.Errorf("failed to write output file: %v", err)
 			}
 			fmt.Printf("\nSummary saved to %s\n", outputFile)

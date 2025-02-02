@@ -10,13 +10,14 @@ import (
 
 // Config holds all configuration values
 type Config struct {
-	LLMBaseURL   string        `mapstructure:"llm_base_url"`
-	Model        string        `mapstructure:"model"`
-	OutputFormat string        `mapstructure:"output_format"`
-	SummaryType  string        `mapstructure:"summary_type"`
-	MaxRetries   int           `mapstructure:"max_retries"`
-	Timeout      int           `mapstructure:"timeout_seconds"`
-	Summaries    SummaryConfig `mapstructure:"summaries"`
+	LLMBaseURL   string           `mapstructure:"llm_base_url"`
+	Model        string           `mapstructure:"model"`
+	OutputFormat string           `mapstructure:"output_format"`
+	SummaryType  string           `mapstructure:"summary_type"`
+	MaxRetries   int              `mapstructure:"max_retries"`
+	Timeout      int              `mapstructure:"timeout_seconds"`
+	Summaries    SummaryConfig    `mapstructure:"summaries"`
+	Transcripts  TranscriptConfig `mapstructure:"transcripts"`
 }
 
 // SummaryConfig holds the different summary templates
@@ -27,6 +28,10 @@ type SummaryConfig struct {
 }
 
 type SummaryTemplate struct {
+	SystemPrompt string `mapstructure:"system_prompt"`
+}
+
+type TranscriptConfig struct {
 	SystemPrompt string `mapstructure:"system_prompt"`
 }
 
@@ -114,6 +119,14 @@ func setDefaults() {
 - Analysis of key concepts and their relationships
 - Clear structure with sections and subsections
 - Any relevant technical details or specifications`)
+
+	viper.SetDefault("transcripts.system_prompt", `Format the following raw transcript text.
+- Add appropriate capitalization and punctuation
+- Keep all original words exactly as they appear
+- Never add any additional commentary
+- Do not correct spelling or grammar
+- Add paragraph breaks where appropriate
+- Do not otherwise modify the content in any way`)
 }
 
 func bindEnvVars() {
