@@ -7,19 +7,28 @@ A command-line tool that fetches YouTube video transcripts and generates concise
 - 🎥 Fetch transcripts from any YouTube video with available captions
 - 🤖 Generate AI-powered summaries using local LLM models
 - 📝 Multiple summary types (short, medium, long)
-- 💾 Save summaries to files in Markdown format
+- 💾 Save summaries to an output file
 - 🌐 Support for videos with auto-generated captions
 - ⚡ Streaming output for real-time summary generation
+- 📄 Output formatted transcript / save to file
 
-## Prerequisites
+## Dependencies
 
-- Go 1.23 or higher
-- Python 3.8 or higher
-- Internet connection for YouTube transcript fetching
+- Python 3.8+
+- LM Studio installation
+- Any model on LM studio e.g. `llama-3.2-3b-instruct`
 
 ## Installation
 
+If you have Python 3.8+, LM studio and a model installed you should be good to go!
+
+You can download the prebuilt binaries.
+
 ### From Source
+
+#### Prerequisites
+
+- Go >=1.23
 
 1. Clone the repository:
 
@@ -54,18 +63,13 @@ yts https://www.youtube.com/watch?v=dQw4w9WgXcQ
 
 ### Summary Types
 
-Generate different summary lengths:
+Generate different summary lengths (default is medium):
 
 ```bash
 # Short summary
-yts https://www.youtube.com/watch?v=dQw4w9WgXcQ --summary short
-# or
 yts https://www.youtube.com/watch?v=dQw4w9WgXcQ -s
 
-# Detailed summary (default is medium)
-yts https://www.youtube.com/watch?v=dQw4w9WgXcQ --summary long
-
-# or
+# Long summary
 yts https://www.youtube.com/watch?v=dQw4w9WgXcQ -l
 ```
 
@@ -74,7 +78,7 @@ yts https://www.youtube.com/watch?v=dQw4w9WgXcQ -l
 Save the summary to a Markdown file:
 
 ```bash
-yts https://www.youtube.com/watch?v=dQw4w9WgXcQ --output summary.md
+yts https://www.youtube.com/watch?v=dQw4w9WgXcQ --output summary.txt
 ```
 
 ### Transcript Formatting
@@ -86,31 +90,23 @@ To get a formatted version of the raw transcript without summarization:
 yts transcript https://www.youtube.com/watch?v=dQw4w9WgXcQ
 
 # Save formatted transcript to file
-yts transcript https://www.youtube.com/watch?v=dQw4w9WgXcQ --output my-transcript.md
+yts transcript https://www.youtube.com/watch?v=dQw4w9WgXcQ --output my-transcript.txt
 ```
 
 ### Configuration
 
-YTS uses a configuration file located at `~/.config/yts/config.json`. You can customize:
+YTS uses a configuration file located in a platform-specific directory.
 
-- LLM base URL
+You can customize:
+
+- LLM base URL / port
 - Model selection
 - Output format
-- Default summary type
-- API timeouts and retries
+- Default summary type (short, medium [default], long)
+- The short, medium, and long summary system prompts
+- Transcript system prompt
 
-Example configuration:
-
-```json
-{
-    "llm_base_url": "http://localhost:1234",
-    "model": "llama-3.2-3b-instruct",
-    "output_format": "markdown",
-    "summary_type": "medium",
-    "max_retries": 3,
-    "timeout_seconds": 30
-}
-```
+You can view the current config file path and values with `yts config`.
 
 ### Environment Variables
 
