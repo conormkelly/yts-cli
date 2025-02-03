@@ -4,6 +4,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/conormkelly/yts-cli/internal/config"
@@ -73,6 +74,21 @@ var rootCmd = &cobra.Command{
 
 		// Handle output file if specified
 		if outputFile != "" {
+			// Handle home directory expansion
+			if outputFile[:2] == "~/" {
+				homeDir, err := os.UserHomeDir()
+				if err != nil {
+					return fmt.Errorf("failed to get home directory: %v", err)
+				}
+				outputFile = filepath.Join(homeDir, outputFile[2:])
+			}
+
+			// Ensure directory exists
+			outputDir := filepath.Dir(outputFile)
+			if err := os.MkdirAll(outputDir, 0755); err != nil {
+				return fmt.Errorf("failed to create output directory: %v", err)
+			}
+
 			if err := os.WriteFile(outputFile, []byte(summary.String()), 0644); err != nil {
 				return fmt.Errorf("failed to write output file: %v", err)
 			}
