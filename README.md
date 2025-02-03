@@ -10,7 +10,7 @@ A command-line tool that fetches YouTube video transcripts and generates concise
 - 💾 Save summaries to an output file
 - 🌐 Support for videos with auto-generated captions
 - ⚡ Streaming output for real-time summary generation
-- 📄 Output formatted transcript / save to file
+- 📄 Output formatted transcripts
 
 ## Dependencies
 
