@@ -21,7 +21,7 @@ A command-line tool that fetches YouTube video transcripts and generates concise
 
 ### Prebuilt binaries
 
-You can download the prebuilt binaries [here](https://github.com/conormkelly/yts-cli/releases).
+You can download the latest release from the [releases page](https://github.com/conormkelly/yts-cli/releases/latest).
 
 ### From Source
 
