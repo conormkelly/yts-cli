@@ -133,9 +133,6 @@ You can override configuration settings using environment variables:
 ### Project Structure
 
 ```txt
-### Project Structure
-
-```txt
 .
 ├── cmd/                   # Command implementations
 │   ├── config.go          # Configuration subcommand
