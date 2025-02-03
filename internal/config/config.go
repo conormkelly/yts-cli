@@ -10,14 +10,11 @@ import (
 
 // Config holds all configuration values
 type Config struct {
-	LLMBaseURL   string           `mapstructure:"llm_base_url"`
-	Model        string           `mapstructure:"model"`
-	OutputFormat string           `mapstructure:"output_format"`
-	SummaryType  string           `mapstructure:"summary_type"`
-	MaxRetries   int              `mapstructure:"max_retries"`
-	Timeout      int              `mapstructure:"timeout_seconds"`
-	Summaries    SummaryConfig    `mapstructure:"summaries"`
-	Transcripts  TranscriptConfig `mapstructure:"transcripts"`
+	LLMBaseURL  string           `mapstructure:"llm_base_url"`
+	Model       string           `mapstructure:"model"`
+	SummaryType string           `mapstructure:"summary_type"`
+	Summaries   SummaryConfig    `mapstructure:"summaries"`
+	Transcripts TranscriptConfig `mapstructure:"transcripts"`
 }
 
 // SummaryConfig holds the different summary templates
@@ -98,8 +95,6 @@ func setDefaults() {
 	viper.SetDefault("model", defaultModel)
 	viper.SetDefault("output_format", "markdown")
 	viper.SetDefault("summary_type", "medium")
-	viper.SetDefault("max_retries", 3)
-	viper.SetDefault("timeout_seconds", 30)
 
 	// Set summary template defaults
 	viper.SetDefault("summaries.short.system_prompt", `Create a concise summary of the following video transcript. Focus on:
