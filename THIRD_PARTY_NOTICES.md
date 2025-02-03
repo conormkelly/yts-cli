@@ -2,12 +2,6 @@
 
 This software uses the following open source packages:
 
-## youtube-transcript-api
-
-- License: Apache License 2.0
-- Source: <https://github.com/jdepoix/youtube-transcript-api>
-- Required Notice: Copyright © 2020 Jonas Depoix
-
 ## Cobra
 
 - License: Apache License 2.0

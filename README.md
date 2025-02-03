@@ -14,15 +14,15 @@ A command-line tool that fetches YouTube video transcripts and generates concise
 
 ## Dependencies
 
-- Python 3.8+
-- LM Studio installation
+- [LM Studio](https://lmstudio.ai/) installation
 - Any model on LM studio e.g. `llama-3.2-3b-instruct`
 
 ## Installation
 
-If you have Python 3.8+, LM studio and a model installed you should be good to go!
+### Prebuilt binaries
 
-You can download the prebuilt binaries.
+You can download the prebuilt binaries here.
+TODO: add link!
 
 ### From Source
 
@@ -48,8 +48,6 @@ You can download the prebuilt binaries.
    ```bash
    make install
    ```
-
-The first time you run YTS, it will automatically set up a Python virtual environment and install required dependencies.
 
 ## Usage
 
@@ -117,25 +115,43 @@ You can override configuration settings using environment variables:
 
 ## How It Works
 
-1. **Transcript Fetching**: YTS uses the `youtube-transcript-api` Python package to fetch video transcripts. It automatically handles auto-generated captions.
+1. **Transcript Fetching**: YTS fetches transcripts directly from YouTube using a pure Go implementation. It handles both manual and auto-generated captions, supporting multiple languages and formats. The fetcher:
+   - Extracts caption metadata from the video page
+   - Downloads the raw transcript XML
+   - Processes and formats the captions into clean text
 
-2. **AI Processing**: The transcript is processed using a local LLM (default: llama-3.2-3b-instruct) to generate a coherent summary. The summary is streamed in real-time to provide immediate feedback.
+2. **AI Processing**: The transcript is processed using a local LLM (default: llama-3.2-3b-instruct) to generate a coherent summary. The processing pipeline:
+   - Sends a system prompt to the LLM based on the selected summary type (short/medium/long)
+   - Streams completions for responsive feedback
 
-3. **Output Generation**: The summary is formatted in Markdown and displayed in the terminal, optionally being saved to a file.
+3. **Output Generation**: The summary is displayed in the terminal, with:
+   - Proper text formatting and sanitization
+   - Real-time streaming output
+   - Optional file saving
 
 ## Development
 
 ### Project Structure
 
 ```txt
+### Project Structure
+
+```txt
 .
-├── cmd/                  # Command implementations
+├── cmd/                   # Command implementations
+│   ├── config.go          # Configuration subcommand
+│   ├── root.go            # Main command logic
+│   ├── transcript.go      # Transcript subcommand
+│   └── version.go         # Version information subcommand
 ├── internal/
-│   ├── config/           # Configuration management
-│   ├── llm/              # LLM client and processing
-│   └── transcript/       # Transcript fetching
-├── main.go               # Entry point
-└── Makefile              # Build and development commands
+│   ├── config/            # Configuration management
+│   │   └── config.go      # Config types and loading
+│   ├── llm/               # LLM integration
+│   │   └── client.go      # LLM client and streaming
+│   └── transcript/        # Transcript processing
+│       └── fetcher.go     # YouTube transcript fetching
+├── main.go                # Entry point
+└── Makefile               # Build and development commands
 ```
 
 ### Building
@@ -150,12 +166,20 @@ You can override configuration settings using environment variables:
 2. Create your feature branch: `git checkout -b feature/amazing-feature`
 3. Open a pull request
 
+## Legal Notice
+
+This tool accesses publicly available YouTube video transcripts. While I believe this falls within fair use, users should:
+
+- Review YouTube's Terms of Service
+- Use the tool responsibly
+- Consider YouTube's official API for commercial applications
+
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 
 ## Acknowledgments
 
-- Uses [youtube-transcript-api](https://github.com/jdepoix/youtube-transcript-api) for transcript fetching
+- Transcript fetching approach inspired by [youtube-transcript-api](https://github.com/jdepoix/youtube-transcript-api) (reimplemented in pure Go)
 - Built with [Cobra](https://github.com/spf13/cobra) CLI framework
 - Configuration managed with [Viper](https://github.com/spf13/viper)

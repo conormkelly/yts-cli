@@ -37,11 +37,10 @@ var rootCmd = &cobra.Command{
 		}
 
 		// Initialize transcript fetcher
-		fetcher, err := transcript.NewFetcher()
+		fetcher := transcript.NewTranscriptFetcher()
 		if err != nil {
 			return fmt.Errorf("failed to initialize transcript fetcher: %v", err)
 		}
-		defer fetcher.Cleanup()
 
 		// Initialize LLM client using config
 		llmClient := llm.NewClient(cfg.LLMBaseURL)
@@ -59,9 +58,14 @@ var rootCmd = &cobra.Command{
 			return fmt.Errorf("failed to fetch transcript: %v", err)
 		}
 
+		var transcriptText strings.Builder
+		for i := range transcript {
+			transcriptText.WriteString(transcript[i].Text + "\n")
+		}
+
 		// Generate summary using streaming
 		var summary strings.Builder
-		err = llmClient.Stream(systemPrompt, cfg.Model, transcript, func(chunk string) {
+		err = llmClient.Stream(systemPrompt, cfg.Model, transcriptText.String(), func(chunk string) {
 			fmt.Print(chunk)
 			summary.WriteString(chunk)
 		})

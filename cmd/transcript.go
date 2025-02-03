@@ -26,11 +26,10 @@ var transcriptCmd = &cobra.Command{
 		}
 
 		// Initialize transcript fetcher
-		fetcher, err := transcript.NewFetcher()
+		fetcher := transcript.NewTranscriptFetcher()
 		if err != nil {
 			return fmt.Errorf("failed to initialize transcript fetcher: %v", err)
 		}
-		defer fetcher.Cleanup()
 
 		// Initialize LLM client
 		llmClient := llm.NewClient(cfg.LLMBaseURL)
@@ -41,13 +40,25 @@ var transcriptCmd = &cobra.Command{
 			return fmt.Errorf("failed to fetch transcript: %v", err)
 		}
 
+		// TODO: make this a flag
+		includeTimestamps := false
+
+		var transcriptText strings.Builder
+		for i := range rawTranscript {
+			if includeTimestamps {
+				transcriptText.WriteString(fmt.Sprintf("[%.1fs]: %s\n", rawTranscript[i].Start, rawTranscript[i].Text))
+			} else {
+				transcriptText.WriteString(rawTranscript[i].Text + "\n")
+			}
+		}
+
 		// Format transcript using streaming
 		var formattedTranscript strings.Builder
 
 		err = llmClient.Stream(
 			cfg.Transcripts.SystemPrompt,
 			cfg.Model,
-			rawTranscript,
+			transcriptText.String(),
 			func(chunk string) {
 				fmt.Print(chunk)
 				formattedTranscript.WriteString(chunk)

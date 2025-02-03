@@ -1,163 +1,196 @@
 package transcript
 
 import (
-	"bytes"
 	"encoding/json"
+	"encoding/xml"
 	"fmt"
-	"os"
-	"os/exec"
-	"path/filepath"
+	"html"
+	"io"
+	"net/http"
+	"regexp"
+	"strconv"
+	"strings"
+	"time"
 )
 
-type Fetcher struct {
-	pythonScript string
-	venvPath     string
+// Custom error types
+type ErrTranscriptsDisabled struct{ VideoID string }
+type ErrNoTranscriptFound struct{ VideoID string }
+
+func (e ErrTranscriptsDisabled) Error() string {
+	return fmt.Sprintf("transcripts are disabled for video: %s", e.VideoID)
 }
 
-type Response struct {
-	Transcript string `json:"transcript,omitempty"`
-	Error      string `json:"error,omitempty"`
+func (e ErrNoTranscriptFound) Error() string {
+	return fmt.Sprintf("no transcript found for video: %s", e.VideoID)
 }
 
-// ensureVirtualEnv creates and sets up a virtual environment with required dependencies
-func ensureVirtualEnv() (string, error) {
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		return "", fmt.Errorf("failed to get home directory: %w", err)
+// CaptionsData represents the YouTube captions JSON structure
+type CaptionsData struct {
+	CaptionTracks []struct {
+		BaseURL string `json:"baseUrl"`
+		Name    struct {
+			SimpleText string `json:"simpleText"`
+		} `json:"name"`
+		LanguageCode string `json:"languageCode"`
+		Kind         string `json:"kind"`
+	} `json:"captionTracks"`
+}
+
+// TranscriptResponse represents a single caption entry
+type TranscriptResponse struct {
+	Text     string  `json:"text"`
+	Start    float64 `json:"start"`
+	Duration float64 `json:"duration"`
+}
+
+// TranscriptFetcher handles fetching transcripts from YouTube
+type TranscriptFetcher struct {
+	httpClient *http.Client
+}
+
+func NewTranscriptFetcher() *TranscriptFetcher {
+	return &TranscriptFetcher{
+		httpClient: &http.Client{
+			Timeout: 10 * time.Second,
+		},
+	}
+}
+
+func extractVideoID(url string) (string, error) {
+	patterns := []string{
+		`(?:v=|\/)([0-9A-Za-z_-]{11}).*`,
+		`(?:youtu\.be\/)([0-9A-Za-z_-]{11})`,
 	}
 
-	// Create .yts directory in user's home if it doesn't exist
-	ytsDir := filepath.Join(homeDir, ".yts")
-	if err := os.MkdirAll(ytsDir, 0755); err != nil {
-		return "", fmt.Errorf("failed to create .yts directory: %w", err)
-	}
-
-	venvPath := filepath.Join(ytsDir, "venv")
-	pythonPath := filepath.Join(venvPath, "bin", "python3")
-
-	// Check if venv already exists and has the package
-	if _, err := os.Stat(pythonPath); err == nil {
-		// Try importing the package
-		cmd := exec.Command(pythonPath, "-c", "import youtube_transcript_api")
-		if cmd.Run() == nil {
-			return venvPath, nil // Venv exists and package is installed
+	for _, pattern := range patterns {
+		re := regexp.MustCompile(pattern)
+		if matches := re.FindStringSubmatch(url); len(matches) > 1 {
+			return matches[1], nil
 		}
 	}
 
-	fmt.Println("Setting up Python virtual environment...")
-
-	// Create virtual environment
-	cmd := exec.Command("python3", "-m", "venv", venvPath)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	if err := cmd.Run(); err != nil {
-		return "", fmt.Errorf("failed to create virtual environment: %w", err)
-	}
-
-	// Install package in virtual environment
-	fmt.Println("Installing youtube_transcript_api...")
-	pipPath := filepath.Join(venvPath, "bin", "pip3")
-	cmd = exec.Command(pipPath, "install", "youtube-transcript-api")
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	if err := cmd.Run(); err != nil {
-		return "", fmt.Errorf("failed to install dependencies: %w", err)
-	}
-
-	return venvPath, nil
+	return "", fmt.Errorf("could not extract video ID from URL: %s", url)
 }
 
-// NewFetcher creates a new transcript fetcher and sets up the Python environment
-func NewFetcher() (*Fetcher, error) {
-	venvPath, err := ensureVirtualEnv()
+func (f *TranscriptFetcher) Fetch(videoURL string) ([]TranscriptResponse, error) {
+	// 1. Extract video ID
+	videoID, err := extractVideoID(videoURL)
+	if err != nil {
+		return nil, fmt.Errorf("invalid video ID: %w", err)
+	}
+
+	// 2. Fetch video page
+	watchURL := fmt.Sprintf("https://www.youtube.com/watch?v=%s", videoID)
+	req, err := http.NewRequest("GET", watchURL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	// Add headers to mimic browser request
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
+	req.Header.Set("Accept-Language", "en-US,en;q=0.9")
+
+	resp, err := f.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch video page: %w", err)
+	}
+	defer resp.Body.Close()
+
+	// 3. Extract captions JSON
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response body: %w", err)
+	}
+
+	captionsData, err := extractCaptionsJSON(string(body), videoID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to extract captions: %w", err)
+	}
+
+	// Debug: Print available captions
+	// fmt.Println("Available caption tracks:")
+	// for _, track := range captionsData.CaptionTracks {
+	// 	fmt.Printf("- Language: %s (%s)\n", track.Name.SimpleText, track.LanguageCode)
+	// }
+
+	if len(captionsData.CaptionTracks) == 0 {
+		return nil, &ErrNoTranscriptFound{VideoID: videoID}
+	}
+
+	// 4. Fetch and parse transcript (using first available track)
+	transcript, err := f.fetchTranscriptFromURL(captionsData.CaptionTracks[0].BaseURL)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch transcript: %w", err)
+	}
+
+	return transcript, nil
+}
+
+func extractCaptionsJSON(html string, videoID string) (*CaptionsData, error) {
+	parts := strings.Split(html, `"captions":`)
+	if len(parts) < 2 {
+		return nil, &ErrTranscriptsDisabled{VideoID: videoID}
+	}
+
+	// Find the end of the captions JSON object
+	jsonPart := strings.Split(parts[1], `,"videoDetails"`)[0]
+	jsonPart = strings.TrimSpace(jsonPart)
+
+	var captionsData struct {
+		PlayerCaptionsTracklistRenderer CaptionsData `json:"playerCaptionsTracklistRenderer"`
+	}
+
+	if err := json.Unmarshal([]byte(jsonPart), &captionsData); err != nil {
+		return nil, fmt.Errorf("failed to parse captions JSON: %w", err)
+	}
+
+	return &captionsData.PlayerCaptionsTracklistRenderer, nil
+}
+
+func (f *TranscriptFetcher) fetchTranscriptFromURL(url string) ([]TranscriptResponse, error) {
+	resp, err := f.httpClient.Get(url)
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
 
-	script := `
-import sys
-import json
-import re
-from youtube_transcript_api import YouTubeTranscriptApi, NoTranscriptFound, TranscriptsDisabled
+	// Parse XML response
+	decoder := xml.NewDecoder(resp.Body)
+	var transcript []TranscriptResponse
 
-def extract_video_id(url):
-    patterns = [
-        r'(?:v=|\/)([0-9A-Za-z_-]{11}).*',
-        r'(?:youtu\.be\/)([0-9A-Za-z_-]{11})',
-    ]
-    for pattern in patterns:
-        match = re.search(pattern, url)
-        if match:
-            return match.group(1)
-    return None
-
-def main():
-    try:
-        video_id = extract_video_id(sys.argv[1])
-        if not video_id:
-            print(json.dumps({"error": "Invalid YouTube URL"}))
-            sys.exit(1)
-
-        transcript = YouTubeTranscriptApi.get_transcript(video_id)
-        text = "\n".join(entry["text"] for entry in transcript)
-        print(json.dumps({"transcript": text}))
-
-    except NoTranscriptFound:
-        print(json.dumps({"error": "No transcript available for this video"}))
-        sys.exit(1)
-    except TranscriptsDisabled:
-        print(json.dumps({"error": "Transcripts are disabled for this video"}))
-        sys.exit(1)
-    except Exception as e:
-        print(json.dumps({"error": str(e)}))
-        sys.exit(1)
-
-if __name__ == "__main__":
-    main()
-`
-	tmpDir := os.TempDir()
-	scriptPath := filepath.Join(tmpDir, "yt_transcript_fetcher.py")
-	if err := os.WriteFile(scriptPath, []byte(script), 0644); err != nil {
-		return nil, fmt.Errorf("failed to create script file: %w", err)
-	}
-
-	return &Fetcher{
-		pythonScript: scriptPath,
-		venvPath:     venvPath,
-	}, nil
-}
-
-// Fetch retrieves the transcript for a given YouTube video URL
-func (f *Fetcher) Fetch(videoURL string) (string, error) {
-	pythonPath := filepath.Join(f.venvPath, "bin", "python3")
-	cmd := exec.Command(pythonPath, f.pythonScript, videoURL)
-	var stdout, stderr bytes.Buffer
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
-
-	if err := cmd.Run(); err != nil {
-		// Check if we have a structured error response
-		var response Response
-		if err := json.Unmarshal(stdout.Bytes(), &response); err == nil && response.Error != "" {
-			return "", fmt.Errorf("transcript error: %s", response.Error)
+	for {
+		token, err := decoder.Token()
+		if err == io.EOF {
+			break
 		}
-		// Fall back to command error
-		return "", fmt.Errorf("failed to fetch transcript: %w\nStderr: %s", err, stderr.String())
+		if err != nil {
+			return nil, err
+		}
+
+		switch se := token.(type) {
+		case xml.StartElement:
+			if se.Name.Local == "text" {
+				var entry TranscriptResponse
+				// Get start and duration attributes
+				for _, attr := range se.Attr {
+					switch attr.Name.Local {
+					case "start":
+						entry.Start, _ = strconv.ParseFloat(attr.Value, 64)
+					case "dur":
+						entry.Duration, _ = strconv.ParseFloat(attr.Value, 64)
+					}
+				}
+				// Get text content
+				if textToken, err := decoder.Token(); err == nil {
+					if text, ok := textToken.(xml.CharData); ok {
+						entry.Text = html.UnescapeString(string(text))
+					}
+				}
+				transcript = append(transcript, entry)
+			}
+		}
 	}
 
-	var response Response
-	if err := json.Unmarshal(stdout.Bytes(), &response); err != nil {
-		return "", fmt.Errorf("failed to parse transcript response: %w", err)
-	}
-
-	if response.Error != "" {
-		return "", fmt.Errorf("transcript error: %s", response.Error)
-	}
-
-	return response.Transcript, nil
-}
-
-// Cleanup removes the temporary Python script
-func (f *Fetcher) Cleanup() error {
-	return os.Remove(f.pythonScript)
+	return transcript, nil
 }
