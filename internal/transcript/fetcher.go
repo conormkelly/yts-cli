@@ -3,6 +3,7 @@ package transcript
 import (
 	"encoding/json"
 	"encoding/xml"
+	"errors"
 	"fmt"
 	"html"
 	"io"
@@ -73,18 +74,18 @@ func extractVideoID(url string) (string, error) {
 	return "", fmt.Errorf("could not extract video ID from URL: %s", url)
 }
 
-func (f *TranscriptFetcher) Fetch(videoURL string) ([]TranscriptResponse, error) {
+func (f *TranscriptFetcher) Fetch(videoURL string) (string, []TranscriptResponse, error) {
 	// 1. Extract video ID
 	videoID, err := extractVideoID(videoURL)
 	if err != nil {
-		return nil, fmt.Errorf("invalid video ID: %w", err)
+		return "", nil, fmt.Errorf("invalid video ID: %w", err)
 	}
 
 	// 2. Fetch video page
 	watchURL := fmt.Sprintf("https://www.youtube.com/watch?v=%s", videoID)
 	req, err := http.NewRequest("GET", watchURL, nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
+		return "", nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
 	// Add headers to mimic browser request
@@ -93,19 +94,26 @@ func (f *TranscriptFetcher) Fetch(videoURL string) ([]TranscriptResponse, error)
 
 	resp, err := f.httpClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch video page: %w", err)
+		return "", nil, fmt.Errorf("failed to fetch video page: %w", err)
 	}
 	defer resp.Body.Close()
 
 	// 3. Extract captions JSON
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read response body: %w", err)
+		return "", nil, fmt.Errorf("failed to read response body: %w", err)
+	}
+
+	htmlBody := string(body)
+
+	title, err := extractTitle(htmlBody)
+	if err != nil {
+		return "", nil, fmt.Errorf("failed to extract video title: %w", err)
 	}
 
 	captionsData, err := extractCaptionsJSON(string(body), videoID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to extract captions: %w", err)
+		return "", nil, fmt.Errorf("failed to extract captions: %w", err)
 	}
 
 	// Debug: Print available captions
@@ -115,16 +123,26 @@ func (f *TranscriptFetcher) Fetch(videoURL string) ([]TranscriptResponse, error)
 	// }
 
 	if len(captionsData.CaptionTracks) == 0 {
-		return nil, &ErrNoTranscriptFound{VideoID: videoID}
+		return "", nil, &ErrNoTranscriptFound{VideoID: videoID}
 	}
 
 	// 4. Fetch and parse transcript (using first available track)
 	transcript, err := f.fetchTranscriptFromURL(captionsData.CaptionTracks[0].BaseURL)
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch transcript: %w", err)
+		return "", nil, fmt.Errorf("failed to fetch transcript: %w", err)
 	}
 
-	return transcript, nil
+	return title, transcript, nil
+}
+
+func extractTitle(htmlText string) (string, error) {
+	parts := strings.Split(htmlText, "<title>")
+	if len(parts) < 2 {
+		return "", errors.New("could not find <title> tag in html")
+	}
+	// Find the end of the title
+	rawTitle := strings.Split(parts[1], " - YouTube</title>")[0]
+	return html.UnescapeString(rawTitle), nil
 }
 
 func extractCaptionsJSON(html string, videoID string) (*CaptionsData, error) {

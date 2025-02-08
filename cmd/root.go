@@ -53,10 +53,12 @@ var rootCmd = &cobra.Command{
 		}
 
 		// Fetch transcript
-		transcript, err := fetcher.Fetch(videoURL)
+		title, transcript, err := fetcher.Fetch(videoURL)
 		if err != nil {
 			return fmt.Errorf("failed to fetch transcript: %v", err)
 		}
+
+		fmt.Printf("\nTitle: %s\n\n", title)
 
 		var transcriptText strings.Builder
 		for i := range transcript {
@@ -93,7 +95,7 @@ var rootCmd = &cobra.Command{
 				return fmt.Errorf("failed to create output directory: %v", err)
 			}
 
-			if err := os.WriteFile(outputFile, []byte(summary.String()), 0644); err != nil {
+			if err := os.WriteFile(outputFile, []byte(title+"\n\n"+summary.String()), 0644); err != nil {
 				return fmt.Errorf("failed to write output file: %v", err)
 			}
 			fmt.Printf("\nSummary saved to %s\n", outputFile)

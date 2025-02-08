@@ -35,10 +35,12 @@ var transcriptCmd = &cobra.Command{
 		llmClient := llm.NewClient(cfg.LLMBaseURL)
 
 		// Fetch transcript
-		rawTranscript, err := fetcher.Fetch(videoURL)
+		title, rawTranscript, err := fetcher.Fetch(videoURL)
 		if err != nil {
 			return fmt.Errorf("failed to fetch transcript: %v", err)
 		}
+
+		fmt.Printf("\nTitle: %s\n\n", title)
 
 		// TODO: make this a flag
 		includeTimestamps := false
