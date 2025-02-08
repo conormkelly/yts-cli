@@ -6,6 +6,7 @@ A command-line tool that fetches YouTube video transcripts and generates concise
 
 - 🎥 Fetch transcripts from any YouTube video with available captions
 - 🤖 Generate AI-powered summaries using local LLM models
+- 🔄 Support for multiple LLM providers (LM Studio, Ollama)
 - 📝 Multiple summary types (short, medium, long)
 - 💾 Save summaries to an output file
 - 🌐 Support for videos with auto-generated captions
@@ -14,8 +15,17 @@ A command-line tool that fetches YouTube video transcripts and generates concise
 
 ## Dependencies
 
+You'll need one of the following LLM providers:
+
+### LM Studio
+
 - [LM Studio](https://lmstudio.ai/) installation
-- Any model on LM studio e.g. `llama-3.2-3b-instruct`
+- Any compatible model
+
+### Ollama
+
+- [Ollama](https://ollama.ai/) installation
+- Any compatible model (e.g., llama2, codellama, mistral)
 
 ## Installation
 
@@ -58,6 +68,21 @@ Summarize a YouTube video:
 yts https://www.youtube.com/watch?v=dQw4w9WgXcQ
 ```
 
+### LLM Provider Selection
+
+YTS supports multiple LLM providers. Configure your preferred provider:
+
+```bash
+# Use LM Studio (default)
+yts https://www.youtube.com/watch?v=dQw4w9WgXcQ
+
+# Use Ollama
+yts --provider ollama https://www.youtube.com/watch?v=dQw4w9WgXcQ
+
+# Or ...
+yts -p ollama https://www.youtube.com/watch?v=dQw4w9WgXcQ
+```
+
 ### Summary Types
 
 Generate different summary lengths (default is medium):
@@ -72,7 +97,7 @@ yts https://www.youtube.com/watch?v=dQw4w9WgXcQ -l
 
 ### Save to File
 
-Save the summary to a Markdown file:
+Save the summary to a file:
 
 ```bash
 yts https://www.youtube.com/watch?v=dQw4w9WgXcQ --output summary.txt
@@ -96,21 +121,39 @@ YTS uses a configuration file located in a platform-specific directory.
 
 You can customize:
 
-- LLM base URL / port
-- Model selection
+- LLM provider selection (lmstudio, ollama)
+- Provider-specific settings:
+  - LM Studio:
+    - Base URL
+    - Model selection
+  - Ollama:
+    - Base URL
+    - Model selection
 - Output format
 - Default summary type (short, medium [default], long)
-- The short, medium, and long summary system prompts
+- Summary system prompts
 - Transcript system prompt
 
-You can view the current config file path and values with `yts config`.
+View current config:
+
+```bash
+yts config
+```
 
 ### Environment Variables
 
-You can override configuration settings using environment variables:
+Override configuration settings using environment variables:
 
-- `YTS_LLM_URL`: Override the LLM API endpoint
-- `YTS_MODEL`: Override the model selection
+- Provider Selection:
+  - `YTS_PROVIDER`: Select LLM provider ("lmstudio" or "ollama")
+
+- LM Studio Settings:
+  - `YTS_LMSTUDIO_URL`: Override the LM Studio API endpoint
+  - `YTS_LMSTUDIO_MODEL`: Override the model selection
+
+- Ollama Settings:
+  - `YTS_OLLAMA_URL`: Override the Ollama API endpoint
+  - `YTS_OLLAMA_MODEL`: Override the model selection
 
 ## How It Works
 
@@ -119,7 +162,7 @@ You can override configuration settings using environment variables:
    - Downloads the raw transcript XML
    - Processes and formats the captions into clean text
 
-2. **AI Processing**: The transcript is processed using a local LLM (default: llama-3.2-3b-instruct) to generate a coherent summary. The processing pipeline:
+2. **AI Processing**: The transcript is processed using your chosen LLM provider to generate a coherent summary. The processing pipeline:
    - Sends a system prompt to the LLM based on the selected summary type (short/medium/long)
    - Streams completions for responsive feedback
 
@@ -138,16 +181,21 @@ You can override configuration settings using environment variables:
 │   ├── config.go          # Configuration subcommand
 │   ├── root.go            # Main command logic
 │   ├── transcript.go      # Transcript subcommand
-│   └── version.go         # Version information subcommand
+│   └── version.go         # Version subcommand
 ├── internal/
 │   ├── config/            # Configuration management
 │   │   └── config.go      # Config types and loading
-│   ├── llm/               # LLM integration
-│   │   └── client.go      # LLM client and streaming
+│   ├── llm/               # LLM provider integration
+│   │   ├── lmstudio.go    # LM Studio provider implementation
+│   │   ├── ollama.go      # Ollama provider implementation
+│   │   └── provider.go    # Provider interface and factory
 │   └── transcript/        # Transcript processing
 │       └── fetcher.go     # YouTube transcript fetching
+├── .github/               # GitHub specific files
+│   └── workflows/         # GitHub Actions workflows
 ├── main.go                # Entry point
-└── Makefile               # Build and development commands
+├── Makefile               # Build and development commands
+└── go.mod                 # Go module definition
 ```
 
 ### Building
