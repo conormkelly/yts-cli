@@ -72,13 +72,6 @@ This includes both default values and any user overrides from config file or env
 			fmt.Println("      └─ (set by YTS_OLLAMA_MODEL environment variable)")
 		}
 
-		// General settings
-		fmt.Println("\nGeneral Settings:")
-		fmt.Printf("  Default Summary Type: %s\n", cfg.SummaryType)
-		if isEnvOverride("YTS_SUMMARY_TYPE") {
-			fmt.Println("    └─ (set by YTS_SUMMARY_TYPE environment variable)")
-		}
-
 		return nil
 	},
 }

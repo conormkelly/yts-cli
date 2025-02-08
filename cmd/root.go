@@ -15,20 +15,15 @@ import (
 )
 
 var (
-	shortSummary bool
-	longSummary  bool
-	provider     string // ollama, LM Studio etc
-	summaryType  string // maintain for backward compatibility
-	outputFile   string
+	longSummary bool
+	provider    string // ollama, LM Studio etc
+	outputFile  string
 )
 
 var rootCmd = &cobra.Command{
 	Use:   "yts [youtube-url]",
 	Short: "Summarize YouTube video transcripts",
 	Args:  cobra.ExactArgs(1),
-	PreRunE: func(cmd *cobra.Command, args []string) error {
-		return validateFlags(cmd, args)
-	},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		videoURL := args[0]
 
@@ -121,15 +116,7 @@ func init() {
 	cobra.OnInitialize(initConfig)
 
 	rootCmd.Flags().StringVarP(&provider, "provider", "p", "", "LLM provider (lmstudio, ollama)")
-
-	// Summary types
-	rootCmd.Flags().BoolVarP(&shortSummary, "short", "s", false, "Generate a short summary")
 	rootCmd.Flags().BoolVarP(&longSummary, "long", "l", false, "Generate a detailed summary")
-
-	// Keep original summary flag for backward compatibility but mark as deprecated
-	rootCmd.Flags().StringVarP(&summaryType, "summary", "", "", "Summary type (short, medium, long) [deprecated]")
-	rootCmd.Flags().MarkDeprecated("summary", "use --short or --long flags instead")
-
 	rootCmd.Flags().StringVarP(&outputFile, "output", "o", "", "output file path")
 
 	// Bind provider flag to viper
@@ -143,49 +130,10 @@ func initConfig() {
 	}
 }
 
-// validateFlags ensures that summary type flags are used correctly
-func validateFlags(_ *cobra.Command, _ []string) error {
-	// Count active summary flags
-	activeFlagCount := 0
-	if shortSummary {
-		activeFlagCount++
-	}
-	if longSummary {
-		activeFlagCount++
-	}
-	if summaryType != "" {
-		activeFlagCount++
-	}
-
-	// Handle multiple flags
-	if activeFlagCount > 1 {
-		return fmt.Errorf("only one summary type flag can be specified (--short, --long, or --summary)")
-	}
-
-	// Handle legacy --summary flag
-	if summaryType != "" {
-		switch summaryType {
-		case "short":
-			shortSummary = true
-		case "long":
-			longSummary = true
-		case "medium":
-			// default behavior
-		default:
-			return fmt.Errorf("invalid summary type: %s (must be short, medium, or long)", summaryType)
-		}
-	}
-
-	return nil
-}
-
 // getSummaryType returns the appropriate summary type based on flags
 func getSummaryType() string {
-	if shortSummary {
-		return "short"
-	}
 	if longSummary {
 		return "long"
 	}
-	return "medium" // default
+	return "short" // default
 }

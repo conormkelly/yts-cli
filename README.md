@@ -7,7 +7,7 @@ A command-line tool that fetches YouTube video transcripts and generates concise
 - 🎥 Fetch transcripts from any YouTube video with available captions
 - 🤖 Generate AI-powered summaries using local LLM models
 - 🔄 Support for multiple LLM providers (LM Studio, Ollama)
-- 📝 Multiple summary types (short, medium, long)
+- 📝 Multiple summary types (short, long)
 - 💾 Save summaries to an output file
 - 🌐 Support for videos with auto-generated captions
 - ⚡ Streaming output for real-time summary generation
@@ -85,11 +85,11 @@ yts -p ollama https://www.youtube.com/watch?v=dQw4w9WgXcQ
 
 ### Summary Types
 
-Generate different summary lengths (default is medium):
+Generate different summary lengths:
 
 ```bash
-# Short summary
-yts https://www.youtube.com/watch?v=dQw4w9WgXcQ -s
+# Short summary (default)
+yts https://www.youtube.com/watch?v=dQw4w9WgXcQ
 
 # Long summary
 yts https://www.youtube.com/watch?v=dQw4w9WgXcQ -l
@@ -112,7 +112,7 @@ To get a formatted version of the raw transcript without summarization:
 yts transcript https://www.youtube.com/watch?v=dQw4w9WgXcQ
 
 # Save formatted transcript to file
-yts transcript https://www.youtube.com/watch?v=dQw4w9WgXcQ --output my-transcript.txt
+yts transcript https://www.youtube.com/watch?v=dQw4w9WgXcQ -o my-transcript.txt
 ```
 
 ### Configuration
@@ -130,7 +130,6 @@ You can customize:
     - Base URL
     - Model selection
 - Output format
-- Default summary type (short, medium [default], long)
 - Summary system prompts
 - Transcript system prompt
 

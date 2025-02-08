@@ -12,7 +12,6 @@ import (
 type Config struct {
 	Provider    string           `mapstructure:"provider"`  // Current provider (lmstudio, ollama)
 	Providers   ProvidersConfig  `mapstructure:"providers"` // Provider-specific configs
-	SummaryType string           `mapstructure:"summary_type"`
 	Summaries   SummaryConfig    `mapstructure:"summaries"`
 	Transcripts TranscriptConfig `mapstructure:"transcripts"`
 }
@@ -35,9 +34,8 @@ type OllamaConfig struct {
 
 // SummaryConfig holds the different summary templates
 type SummaryConfig struct {
-	Short  SummaryTemplate `mapstructure:"short"`
-	Medium SummaryTemplate `mapstructure:"medium"`
-	Long   SummaryTemplate `mapstructure:"long"`
+	Short SummaryTemplate `mapstructure:"short"`
+	Long  SummaryTemplate `mapstructure:"long"`
 }
 
 type SummaryTemplate struct {
@@ -127,17 +125,7 @@ func setDefaults() {
 - If applicable, note any specific calls to action or main conclusions
 Keep total length under 150 words.`)
 
-	// Medium summary - Restructured for better organization and insight
-	viper.SetDefault("summaries.medium.system_prompt", `Create a clear and structured summary of the following transcript that a new viewer could quickly understand. Include:
-
-1. Overview (2-3 sentences introducing the main topic and scope)
-2. Key Arguments/Points (4-6 bullet points with supporting details)
-3. Notable Examples/Evidence presented
-4. Core Takeaways
-
-Maintain objective tone and preserve any technical terminology used. Aim for clarity and accuracy over comprehensiveness.`)
-
-	// Long summary - Enhanced for better analysis and utility
+	// Long summary
 	viper.SetDefault("summaries.long.system_prompt", `Create a detailed analysis of the following transcript that preserves the original context and depth while making it accessible. Structure as follows:
 
 1. Executive Summary (3-4 sentences)
@@ -186,12 +174,10 @@ func GetSystemPrompt(summaryType string) string {
 	}
 
 	switch summaryType {
-	case "short":
-		return cfg.Summaries.Short.SystemPrompt
 	case "long":
 		return cfg.Summaries.Long.SystemPrompt
 	default:
-		return cfg.Summaries.Medium.SystemPrompt
+		return cfg.Summaries.Short.SystemPrompt
 	}
 }
 
