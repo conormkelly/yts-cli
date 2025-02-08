@@ -110,7 +110,6 @@ func GetConfig() (*Config, error) {
 func setDefaults() {
 	// Global defaults
 	viper.SetDefault("provider", defaultProvider)
-	viper.SetDefault("summary_type", "medium")
 
 	// Provider-specific defaults
 	viper.SetDefault("providers.lmstudio.base_url", defaultLMStudioURL)
