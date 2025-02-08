@@ -10,8 +10,13 @@ import (
 	"strings"
 )
 
-type Client struct {
+type LMStudioProvider struct {
 	baseURL string
+	model   string
+}
+
+func NewLMStudioProvider(baseURL string, model string) *LMStudioProvider {
+	return &LMStudioProvider{baseURL: baseURL, model: model}
 }
 
 type Message struct {
@@ -25,14 +30,6 @@ type CompletionRequest struct {
 	Stream   bool      `json:"stream"`
 }
 
-type CompletionResponse struct {
-	Choices []struct {
-		Message struct {
-			Content string `json:"content"`
-		} `json:"message"`
-	} `json:"choices"`
-}
-
 type StreamResponse struct {
 	Choices []struct {
 		Delta struct {
@@ -41,14 +38,9 @@ type StreamResponse struct {
 	} `json:"choices"`
 }
 
-func NewClient(baseURL string) *Client {
-	return &Client{baseURL: baseURL}
-}
-
-func (c *Client) Stream(systemPrompt string, modelName string, transcript string, callback func(string)) error {
-
+func (p *LMStudioProvider) Stream(systemPrompt string, transcript string, callback func(string)) error {
 	req := CompletionRequest{
-		Model: modelName,
+		Model: p.model,
 		Messages: []Message{
 			{Role: "system", Content: systemPrompt},
 			{Role: "user", Content: transcript},
@@ -62,7 +54,7 @@ func (c *Client) Stream(systemPrompt string, modelName string, transcript string
 	}
 
 	resp, err := http.Post(
-		c.baseURL+"/v1/chat/completions",
+		p.baseURL+"/v1/chat/completions",
 		"application/json",
 		bytes.NewBuffer(jsonData),
 	)
@@ -74,9 +66,9 @@ func (c *Client) Stream(systemPrompt string, modelName string, transcript string
 	if resp.StatusCode != http.StatusOK {
 		var errorResponse map[string]interface{}
 		if err := json.NewDecoder(resp.Body).Decode(&errorResponse); err != nil {
-			return fmt.Errorf("LLM API error (status %d)", resp.StatusCode)
+			return fmt.Errorf("LM Studio API error (status %d)", resp.StatusCode)
 		}
-		return fmt.Errorf("LLM API error: %v", errorResponse)
+		return fmt.Errorf("LM Studio API error: %v", errorResponse)
 	}
 
 	reader := bufio.NewReader(resp.Body)
@@ -111,16 +103,4 @@ func (c *Client) Stream(systemPrompt string, modelName string, transcript string
 	}
 
 	return nil
-}
-
-// Regular non-streaming method kept for reference
-func (c *Client) Summarize(systemPrompt string, modelName string, transcript string) (string, error) {
-	var summary strings.Builder
-	err := c.Stream(systemPrompt, modelName, transcript, func(chunk string) {
-		summary.WriteString(chunk)
-	})
-	if err != nil {
-		return "", err
-	}
-	return summary.String(), nil
 }

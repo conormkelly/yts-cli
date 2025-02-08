@@ -43,19 +43,41 @@ This includes both default values and any user overrides from config file or env
 		}
 		fmt.Println()
 
-		// Display configuration values
-		fmt.Println("Current Settings:")
-		fmt.Printf("  LLM Base URL: %s\n", cfg.LLMBaseURL)
-		if isEnvOverride("YTS_LLM_URL") {
-			fmt.Println("    └─ (set by YTS_LLM_URL environment variable)")
+		// Display provider settings
+		fmt.Println("Provider Settings:")
+		fmt.Printf("  Active Provider: %s\n", cfg.Provider)
+		if isEnvOverride("YTS_PROVIDER") {
+			fmt.Println("    └─ (set by YTS_PROVIDER environment variable)")
 		}
 
-		fmt.Printf("  Model: %s\n", cfg.Model)
-		if isEnvOverride("YTS_MODEL") {
-			fmt.Println("    └─ (set by YTS_MODEL environment variable)")
+		// LM Studio settings
+		fmt.Println("\n  LM Studio:")
+		fmt.Printf("    Base URL: %s\n", cfg.Providers.LMStudio.BaseURL)
+		if isEnvOverride("YTS_LMSTUDIO_URL") {
+			fmt.Println("      └─ (set by YTS_LMSTUDIO_URL environment variable)")
+		}
+		fmt.Printf("    Model: %s\n", cfg.Providers.LMStudio.Model)
+		if isEnvOverride("YTS_LMSTUDIO_MODEL") {
+			fmt.Println("      └─ (set by YTS_LMSTUDIO_MODEL environment variable)")
 		}
 
+		// Ollama settings
+		fmt.Println("\n  Ollama:")
+		fmt.Printf("    Base URL: %s\n", cfg.Providers.Ollama.BaseURL)
+		if isEnvOverride("YTS_OLLAMA_URL") {
+			fmt.Println("      └─ (set by YTS_OLLAMA_URL environment variable)")
+		}
+		fmt.Printf("    Model: %s\n", cfg.Providers.Ollama.Model)
+		if isEnvOverride("YTS_OLLAMA_MODEL") {
+			fmt.Println("      └─ (set by YTS_OLLAMA_MODEL environment variable)")
+		}
+
+		// General settings
+		fmt.Println("\nGeneral Settings:")
 		fmt.Printf("  Default Summary Type: %s\n", cfg.SummaryType)
+		if isEnvOverride("YTS_SUMMARY_TYPE") {
+			fmt.Println("    └─ (set by YTS_SUMMARY_TYPE environment variable)")
+		}
 
 		return nil
 	},

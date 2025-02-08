@@ -32,7 +32,10 @@ var transcriptCmd = &cobra.Command{
 		}
 
 		// Initialize LLM client
-		llmClient := llm.NewClient(cfg.LLMBaseURL)
+		llmClient, err := llm.NewProvider(cfg)
+		if err != nil {
+			return fmt.Errorf("failed to initialize provider: %v", err)
+		}
 
 		// Fetch transcript
 		title, rawTranscript, err := fetcher.Fetch(videoURL)
@@ -59,7 +62,6 @@ var transcriptCmd = &cobra.Command{
 
 		err = llmClient.Stream(
 			cfg.Transcripts.SystemPrompt,
-			cfg.Model,
 			transcriptText.String(),
 			func(chunk string) {
 				fmt.Print(chunk)

@@ -43,7 +43,10 @@ var rootCmd = &cobra.Command{
 		}
 
 		// Initialize LLM client using config
-		llmClient := llm.NewClient(cfg.LLMBaseURL)
+		llmClient, err := llm.NewProvider(cfg)
+		if err != nil {
+			return fmt.Errorf("failed to initialize llm client: %v", err)
+		}
 
 		// Get appropriate system prompt based on resolved summary type
 		resolvedSummaryType := getSummaryType()
@@ -67,7 +70,7 @@ var rootCmd = &cobra.Command{
 
 		// Generate summary using streaming
 		var summary strings.Builder
-		err = llmClient.Stream(systemPrompt, cfg.Model, transcriptText.String(), func(chunk string) {
+		err = llmClient.Stream(systemPrompt, transcriptText.String(), func(chunk string) {
 			fmt.Print(chunk)
 			summary.WriteString(chunk)
 		})

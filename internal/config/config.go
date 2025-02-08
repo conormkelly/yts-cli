@@ -10,11 +10,27 @@ import (
 
 // Config holds all configuration values
 type Config struct {
-	LLMBaseURL  string           `mapstructure:"llm_base_url"`
-	Model       string           `mapstructure:"model"`
+	Provider    string           `mapstructure:"provider"`  // Current provider (lmstudio, ollama)
+	Providers   ProvidersConfig  `mapstructure:"providers"` // Provider-specific configs
 	SummaryType string           `mapstructure:"summary_type"`
 	Summaries   SummaryConfig    `mapstructure:"summaries"`
 	Transcripts TranscriptConfig `mapstructure:"transcripts"`
+}
+
+// ProvidersConfig holds settings for each provider
+type ProvidersConfig struct {
+	LMStudio LMStudioConfig `mapstructure:"lmstudio"`
+	Ollama   OllamaConfig   `mapstructure:"ollama"`
+}
+
+type LMStudioConfig struct {
+	BaseURL string `mapstructure:"base_url"`
+	Model   string `mapstructure:"model"`
+}
+
+type OllamaConfig struct {
+	BaseURL string `mapstructure:"base_url"`
+	Model   string `mapstructure:"model"`
 }
 
 // SummaryConfig holds the different summary templates
@@ -33,11 +49,14 @@ type TranscriptConfig struct {
 }
 
 const (
-	defaultLLMURL  = "http://localhost:1234"
-	defaultModel   = "llama-3.2-3b-instruct"
-	configFileName = "config"
-	configFileType = "json"
-	configDirName  = "yts"
+	defaultProvider      = "lmstudio"
+	defaultLMStudioURL   = "http://localhost:1234"
+	defaultLMStudioModel = "llama-3.2-3b-instruct"
+	defaultOllamaURL     = "http://localhost:11434"
+	defaultOllamaModel   = "llama3.2"
+	configFileName       = "config"
+	configFileType       = "json"
+	configDirName        = "yts"
 )
 
 // Initialize sets up Viper with our configuration
@@ -91,10 +110,15 @@ func GetConfig() (*Config, error) {
 }
 
 func setDefaults() {
-	viper.SetDefault("llm_base_url", defaultLLMURL)
-	viper.SetDefault("model", defaultModel)
-	viper.SetDefault("output_format", "markdown")
+	// Global defaults
+	viper.SetDefault("provider", defaultProvider)
 	viper.SetDefault("summary_type", "medium")
+
+	// Provider-specific defaults
+	viper.SetDefault("providers.lmstudio.base_url", defaultLMStudioURL)
+	viper.SetDefault("providers.lmstudio.model", defaultLMStudioModel)
+	viper.SetDefault("providers.ollama.base_url", defaultOllamaURL)
+	viper.SetDefault("providers.ollama.model", defaultOllamaModel)
 
 	// Set summary template defaults
 	viper.SetDefault("summaries.short.system_prompt", `Create a concise summary of the following transcript. Focus on:
@@ -143,15 +167,22 @@ Preserve technical accuracy while ensuring readability. Include relevant quotes 
 }
 
 func bindEnvVars() {
-	viper.BindEnv("llm_base_url", "YTS_LLM_URL")
-	viper.BindEnv("model", "YTS_MODEL")
+	viper.BindEnv("provider", "YTS_PROVIDER")
+
+	// LM Studio env vars
+	viper.BindEnv("providers.lmstudio.base_url", "YTS_LMSTUDIO_URL")
+	viper.BindEnv("providers.lmstudio.model", "YTS_LMSTUDIO_MODEL")
+
+	// Ollama env vars
+	viper.BindEnv("providers.ollama.base_url", "YTS_OLLAMA_URL")
+	viper.BindEnv("providers.ollama.model", "YTS_OLLAMA_MODEL")
 }
 
 // GetSystemPrompt returns the appropriate system prompt based on summary type
 func GetSystemPrompt(summaryType string) string {
 	cfg, err := GetConfig()
 	if err != nil {
-		return "" // Handle error appropriately in your application
+		return ""
 	}
 
 	switch summaryType {
@@ -161,5 +192,17 @@ func GetSystemPrompt(summaryType string) string {
 		return cfg.Summaries.Long.SystemPrompt
 	default:
 		return cfg.Summaries.Medium.SystemPrompt
+	}
+}
+
+// GetActiveProvider returns the config for the currently selected provider
+func (c *Config) GetActiveProvider() (baseURL string, model string, err error) {
+	switch c.Provider {
+	case "lmstudio":
+		return c.Providers.LMStudio.BaseURL, c.Providers.LMStudio.Model, nil
+	case "ollama":
+		return c.Providers.Ollama.BaseURL, c.Providers.Ollama.Model, nil
+	default:
+		return "", "", fmt.Errorf("unsupported provider: %s", c.Provider)
 	}
 }
