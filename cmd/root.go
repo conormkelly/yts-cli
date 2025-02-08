@@ -11,11 +11,13 @@ import (
 	"github.com/conormkelly/yts-cli/internal/llm"
 	"github.com/conormkelly/yts-cli/internal/transcript"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 var (
 	shortSummary bool
 	longSummary  bool
+	provider     string // ollama, LM Studio etc
 	summaryType  string // maintain for backward compatibility
 	outputFile   string
 )
@@ -118,7 +120,9 @@ func Execute() {
 func init() {
 	cobra.OnInitialize(initConfig)
 
-	// Add new boolean flags for summary types
+	rootCmd.Flags().StringVarP(&provider, "provider", "p", "", "LLM provider (lmstudio, ollama)")
+
+	// Summary types
 	rootCmd.Flags().BoolVarP(&shortSummary, "short", "s", false, "Generate a short summary")
 	rootCmd.Flags().BoolVarP(&longSummary, "long", "l", false, "Generate a detailed summary")
 
@@ -127,6 +131,9 @@ func init() {
 	rootCmd.Flags().MarkDeprecated("summary", "use --short or --long flags instead")
 
 	rootCmd.Flags().StringVarP(&outputFile, "output", "o", "", "output file path")
+
+	// Bind provider flag to viper
+	viper.BindPFlag("provider", rootCmd.Flags().Lookup("provider"))
 }
 
 func initConfig() {
