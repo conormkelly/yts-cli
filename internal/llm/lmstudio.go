@@ -85,6 +85,9 @@ func (p *LMStudioProvider) Stream(systemPrompt string, transcript string, callba
 		if line == "" || line == "data: [DONE]" {
 			continue
 		}
+		if line == "event: error" {
+			return fmt.Errorf("LM Studio error - check the Developer tab > Developer Logs for details")
+		}
 
 		// Remove "data: " prefix if present
 		line = strings.TrimPrefix(line, "data: ")
