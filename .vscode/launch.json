@@ -11,8 +11,7 @@
             "mode": "debug",
             "program": "${workspaceFolder}/main.go",
             "args": [
-                "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                "-s"
+                "https://youtu.be/aFVuYyqWe38",
             ]
         },
         {
@@ -23,7 +22,7 @@
             "program": "${workspaceFolder}/main.go",
             "args": [
                 "transcript",
-                "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+                "https://youtu.be/aFVuYyqWe38"
             ]
         },
     ]
