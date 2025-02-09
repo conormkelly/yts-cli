@@ -7,11 +7,12 @@ A command-line tool that fetches YouTube video transcripts and generates concise
 - 🎥 Fetch transcripts from any YouTube video with available captions
 - 🤖 Generate AI-powered summaries using local LLM models
 - 🔄 Support for multiple LLM providers (LM Studio, Ollama)
-- 📝 Multiple summary types (short, long)
+- 📝 Multiple summary types (short or long/detailed)
 - 💾 Save summaries to an output file
 - 🌐 Support for videos with auto-generated captions
 - ⚡ Streaming output for real-time summary generation
 - 📄 Output formatted transcripts
+- ⚙️ Robust configuration management
 
 ## Dependencies
 
@@ -70,18 +71,28 @@ yts https://www.youtube.com/watch?v=dQw4w9WgXcQ
 
 ### LLM Provider Selection
 
-YTS supports multiple LLM providers. Configure your preferred provider:
+YTS supports multiple LLM providers (LM Studio and Ollama). There are two ways to select your provider:
+
+1. Set the default provider:
 
 ```bash
-# Use LM Studio (default)
-yts https://www.youtube.com/watch?v=dQw4w9WgXcQ
+# Set LM Studio as default
+yts config set provider lmstudio
 
-# Use Ollama
+# Set Ollama as default
+yts config set provider ollama
+
+2. Override the provider temporarily using flags:
+
+```bash
+# Override with --provider flag
 yts --provider ollama https://www.youtube.com/watch?v=dQw4w9WgXcQ
 
-# Or ...
+# Or use the shorter -p flag
 yts -p ollama https://www.youtube.com/watch?v=dQw4w9WgXcQ
 ```
+
+The provider flag (-p or --provider) takes precedence over your default configuration when specified.
 
 ### Summary Types
 
@@ -115,28 +126,41 @@ yts transcript https://www.youtube.com/watch?v=dQw4w9WgXcQ
 yts transcript https://www.youtube.com/watch?v=dQw4w9WgXcQ -o my-transcript.txt
 ```
 
-### Configuration
+### Configuration Management
 
-YTS uses a configuration file located in a platform-specific directory.
-
-You can customize:
-
-- LLM provider selection (lmstudio, ollama)
-- Provider-specific settings:
-  - LM Studio:
-    - Base URL
-    - Model selection
-  - Ollama:
-    - Base URL
-    - Model selection
-- Output format
-- Summary system prompts
-- Transcript system prompt
-
-View current config:
+YTS provides several commands to manage your configuration:
 
 ```bash
-yts config
+# View current configuration
+yts config view
+
+# Set configuration values
+yts config set provider ollama
+yts config set providers.ollama.model mistral
+yts config set providers.ollama.base_url http://localhost:11434
+
+# Edit configuration file directly in your default text editor
+yts config edit
+```
+
+#### Configuration File Location
+
+The configuration file is stored in a platform-specific location:
+
+- Linux: `~/.config/yts/config.json`
+- macOS: `~/Library/Application Support/yts/config.json`
+- Windows: `%AppData%\yts\config.json`
+
+#### Valid Configuration Paths
+
+The following configuration paths can be set using `yts config set`:
+
+```txt
+provider                     # Active provider (lmstudio, ollama)
+providers.lmstudio.base_url  # LM Studio API endpoint
+providers.lmstudio.model     # LM Studio model name
+providers.ollama.base_url    # Ollama API endpoint
+providers.ollama.model       # Ollama model name
 ```
 
 ### Environment Variables
@@ -162,7 +186,7 @@ Override configuration settings using environment variables:
    - Processes and formats the captions into clean text
 
 2. **AI Processing**: The transcript is processed using your chosen LLM provider to generate a coherent summary. The processing pipeline:
-   - Sends a system prompt to the LLM based on the selected summary type (short/medium/long)
+   - Sends a system prompt to the LLM based on the selected summary type (short/long)
    - Streams completions for responsive feedback
 
 3. **Output Generation**: The summary is displayed in the terminal, with:
@@ -177,24 +201,27 @@ Override configuration settings using environment variables:
 ```txt
 .
 ├── cmd/                   # Command implementations
-│   ├── config.go          # Configuration subcommand
-│   ├── root.go            # Main command logic
-│   ├── transcript.go      # Transcript subcommand
-│   └── version.go         # Version subcommand
+│   ├── config.go          # Configuration management
+│   ├── config_edit.go     # Edit config subcommand
+│   ├── config_set.go      # Set config subcommand
+│   ├── config_view.go     # View config subcommand
+│   ├── root.go           # Main command logic
+│   ├── transcript.go     # Transcript subcommand
+│   └── version.go        # Version subcommand
 ├── internal/
-│   ├── config/            # Configuration management
-│   │   └── config.go      # Config types and loading
-│   ├── llm/               # LLM provider integration
-│   │   ├── lmstudio.go    # LM Studio provider implementation
-│   │   ├── ollama.go      # Ollama provider implementation
-│   │   └── provider.go    # Provider interface and factory
-│   └── transcript/        # Transcript processing
-│       └── fetcher.go     # YouTube transcript fetching
-├── .github/               # GitHub specific files
-│   └── workflows/         # GitHub Actions workflows
-├── main.go                # Entry point
-├── Makefile               # Build and development commands
-└── go.mod                 # Go module definition
+│   ├── config/           # Configuration management
+│   │   └── config.go     # Config types and loading
+│   ├── llm/              # LLM provider integration
+│   │   ├── lmstudio.go   # LM Studio provider
+│   │   ├── ollama.go     # Ollama provider
+│   │   └── provider.go   # Provider interface
+│   └── transcript/       # Transcript processing
+│       └── fetcher.go    # YouTube transcript fetching
+├── .github/              # GitHub specific files
+│   └── workflows/        # GitHub Actions workflows
+├── main.go               # Entry point
+├── Makefile             # Build and development commands
+└── go.mod               # Go module definition
 ```
 
 ### Building
