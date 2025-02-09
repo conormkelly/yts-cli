@@ -38,6 +38,11 @@ You'll need one of the following LLM providers:
 
 - [Anthropic API key](https://www.anthropic.com/api)
 
+### OpenAI
+
+- [OpenAI API key](https://platform.openai.com/api-keys)
+- Supports both GPT-4 and GPT-3.5 models
+
 ## Installation
 
 ### Prebuilt binaries
@@ -95,6 +100,13 @@ YTS supports multiple LLM providers (LM Studio and Ollama). There are two ways t
    # Set Claude as default
    yts config set provider claude
    yts apikey set claude your-api-key-here
+
+   # Set OpenAI as default provider
+   yts config set provider openai
+   yts apikey set openai your-api-key-here
+
+   # Optional: Set organization ID if using enterprise account
+   yts config set providers.openai.organization_id your-org-id
    ```
 
 2. Override the provider temporarily using flags:
@@ -111,7 +123,7 @@ YTS supports multiple LLM providers (LM Studio and Ollama). There are two ways t
 
 ### API Key Management
 
-For Claude integration, you'll need to set up your API key:
+For Claude or OpenAI integration, you'll need to set up your API key:
 
 ```bash
 # Store Claude API key securely in system keyring
@@ -119,6 +131,15 @@ yts apikey set claude your-api-key-here
 
 # Remove Claude API key
 yts apikey delete claude
+
+# Store OpenAI API key securely in system keyring
+yts apikey set openai your-api-key here
+
+# Remove OpenAI API key
+yts apikey delete openai
+
+# You can verify if API keys have been set or not by running
+yts config view
 ```
 
 ### Summary Types
@@ -169,6 +190,40 @@ yts config set providers.ollama.base_url http://localhost:11434
 # Edit configuration file directly in your default text editor
 yts config edit
 ```
+
+### Customizing Prompts
+
+YTS uses different prompts for generating summaries and formatting transcripts. You can customize these prompts using the config editor:
+
+```bash
+yts config edit
+```
+
+The configuration file contains the following customizable prompts:
+
+```json
+{
+  "summaries": {
+    "short": {
+      "system_prompt": "Create a concise summary of the following transcript..."
+    },
+    "long": {
+      "system_prompt": "Create a detailed analysis of the following transcript..."
+    }
+  },
+  "transcripts": {
+    "system_prompt": "Format the following raw Youtube transcript text..."
+  }
+}
+```
+
+You can modify these prompts to:
+
+- Change the summary style or format
+- Add specific focus areas
+- Customize the analysis structure
+- Adjust formatting rules
+- Add domain-specific instructions
 
 #### Configuration File Location
 
