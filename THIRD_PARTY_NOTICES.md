@@ -14,10 +14,12 @@ This software uses the following open source packages:
 - Source: <https://github.com/spf13/viper>
 - Required Notice: Copyright (c) 2014 Steve Francia
 
+## go-keyring
+
+- License: MIT License
+- Source: <https://github.com/zalando/go-keyring>
+- Required Notice: Copyright (c) 2016 Zalando SE
+
 ## Other Go Dependencies
 
 See `go.mod` for a complete list of Go module dependencies and their versions. All Go standard library components are BSD-licensed.
-
----
-
-The above third party software packages are provided under their respective licenses. The authors of YTS CLI respect all intellectual property rights and are grateful to the authors of these packages.
