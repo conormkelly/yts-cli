@@ -1,354 +1,372 @@
 # YouTube Transcript Summarizer (YTS) CLI
 
-A command-line tool that fetches YouTube video transcripts and generates concise, well-structured summaries using AI. Perfect for quickly understanding video content without watching the full video.
+A powerful command-line tool that leverages AI to turn YouTube video transcripts into concise, well-structured summaries. Perfect for researchers, content creators, and anyone who wants to quickly understand video content without watching the full video.
 
-## Features
+## ✨ Features
 
-- 🎥 Fetch transcripts from any YouTube video with available captions
-- 🤖 Generate AI-powered summaries using local or hosted LLMs
-- 🔄 Support for multiple LLM providers
-  - Local (LM Studio, Ollama)
-  - Hosted (Claude)
-- 📝 Multiple summary types (short or long/detailed)
-- 💾 Save summaries to an output file
-- 🌐 Support for videos with auto-generated captions
-- ⚡ Streaming output for real-time summary generation
-- 📄 Output formatted transcripts
-- ⚙️ Robust configuration management
+- 🎯 Extract transcripts from any YouTube video with available captions
+- 🤖 Generate AI-powered summaries using your choice of local or cloud LLMs
+- 📝 Multiple summary formats (concise or detailed analysis)
+- 🌍 Support for videos with auto-generated captions
+- ⚡ Real-time streaming output as summaries are generated
+- 💾 Save summaries and transcripts to files
+- ⚙️ Extensive configuration options
+- 🔒 Secure API key management
 
-## Dependencies
+## 🚀 Quick Start
 
-You'll need one of the following LLM providers:
+1. Download the latest release from the [releases page](https://github.com/conormkelly/yts-cli/releases/latest)
 
-### Local
+2. Choose and set up a provider:
+
+   ```bash
+   # For local providers (free, runs on your machine):
+   yts config set provider lmstudio  # or ollama
+   
+   # For cloud providers (requires API key):
+   yts config set provider claude
+   yts apikey set claude your-api-key
+   ```
+
+3. Generate your first summary:
+
+   ```bash
+   yts https://www.youtube.com/watch?v=dQw4w9WgXcQ
+   ```
+
+## 🔧 Dependencies
+
+Choose at least one of these LLM providers:
+
+### Local Providers
+
+These run models on your own machine:
 
 #### LM Studio
 
-- [LM Studio](https://lmstudio.ai/) installation
-- Any compatible model
+- Download from [lmstudio.ai](https://lmstudio.ai/)
+- Compatible with most GGUF models
+- Free to use, runs locally
 
 #### Ollama
 
-- [Ollama](https://ollama.ai/) installation
-- Any compatible model (e.g., llama2, codellama, mistral)
+- Download from [ollama.ai](https://ollama.ai/)
+- Works with llama2, codellama, mistral, etc.
+- Free to use, runs locally
 
-### Hosted
+### Cloud Providers
 
-### Claude
+These require API keys:
 
-- [Anthropic API key](https://www.anthropic.com/api)
+#### Claude (Anthropic)
 
-### OpenAI
+- Get API key from [anthropic.com/api](https://www.anthropic.com/api)
 
-- [OpenAI API key](https://platform.openai.com/api-keys)
-- Supports both GPT-4 and GPT-3.5 models
+#### OpenAI
 
-## Installation
+- Get API key from [platform.openai.com](https://platform.openai.com/api-keys)
 
-### Prebuilt binaries
+## 📦 Installation
 
-You can download the latest release from the [releases page](https://github.com/conormkelly/yts-cli/releases/latest).
+### Option 1: Prebuilt Binaries (Recommended)
 
-### From Source
+Download the appropriate binary for your system from our [releases page](https://github.com/conormkelly/yts-cli/releases/latest).
 
-#### Prerequisites
+### Option 2: Build from Source
+
+Prerequisites:
 
 - Go >=1.23
 
-1. Clone the repository:
-
-   ```bash
-   git clone https://github.com/conormkelly/yts-cli
-   cd yts-cli
-   ```
-
-2. Build the binary:
-
-   ```bash
-   make build
-   ```
-
-3. Install globally (optional):
-
-   ```bash
-   make install
-   ```
-
-## Usage
-
-### Basic Usage
-
-Summarize a YouTube video:
-
 ```bash
-yts https://www.youtube.com/watch?v=dQw4w9WgXcQ
+# Clone the repository
+git clone https://github.com/conormkelly/yts-cli
+cd yts-cli
+
+# Build the binary
+make build
+
+# Optional: Install globally
+make install
 ```
 
-### LLM Provider Selection
+## 🛠️ Basic Usage
 
-YTS supports multiple LLM providers (LM Studio and Ollama). There are two ways to select your provider:
-
-1. Set the default provider:
-
-   ```bash
-   # Set LM Studio as default
-   yts config set provider lmstudio
-
-   # Set Ollama as default
-   yts config set provider ollama
-
-   # Set Claude as default
-   yts config set provider claude
-   yts apikey set claude your-api-key-here
-
-   # Set OpenAI as default provider
-   yts config set provider openai
-   yts apikey set openai your-api-key-here
-
-   # Optional: Set organization ID if using enterprise account
-   yts config set providers.openai.organization_id your-org-id
-   ```
-
-2. Override the provider temporarily using flags:
-
-   ```bash
-   # Override with --provider flag
-   yts --provider ollama https://www.youtube.com/watch?v=dQw4w9WgXcQ
-
-   # Or use the shorter -p flag
-   yts -p ollama https://www.youtube.com/watch?v=dQw4w9WgXcQ
-   ```
-
-   The provider flag (-p or --provider) takes precedence over your default configuration when specified.
-
-### API Key Management
-
-For Claude or OpenAI integration, you'll need to set up your API key:
+### Generate Summaries
 
 ```bash
-# Store Claude API key securely in system keyring
-yts apikey set claude your-api-key-here
-
-# Remove Claude API key
-yts apikey delete claude
-
-# Store OpenAI API key securely in system keyring
-yts apikey set openai your-api-key here
-
-# Remove OpenAI API key
-yts apikey delete openai
-
-# You can verify if API keys have been set or not by running
-yts config view
-```
-
-### Summary Types
-
-Generate different summary lengths:
-
-```bash
-# Short summary (default)
-yts https://www.youtube.com/watch?v=dQw4w9WgXcQ
+# Basic summary (default: short)
+yts https://www.youtube.com/watch?v=video_id
 
 # Long summary
-yts https://www.youtube.com/watch?v=dQw4w9WgXcQ -l
+yts -l https://www.youtube.com/watch?v=video_id
+
+# Save to file
+yts https://www.youtube.com/watch?v=video_id -o summary.txt
 ```
 
-### Save to File
+### Example Output
 
-Save the summary to a file:
+#### Concise Summary
 
-```bash
-yts https://www.youtube.com/watch?v=dQw4w9WgXcQ -o summary.txt
+```txt
+Title: Understanding Quantum Computing Basics
+
+Core Message: Quantum computing harnesses quantum mechanical phenomena to solve 
+specific problems exponentially faster than classical computers.
+
+Key Points:
+1. Qubits can exist in multiple states simultaneously through superposition
+2. Quantum entanglement enables powerful parallel processing capabilities
+3. Current practical limitations include decoherence and error correction
+4. Most promising applications include cryptography and molecular simulation
+
+Call to Action: Researchers encouraged to explore IBM's quantum computing cloud platform.
 ```
 
-### Transcript Formatting
+#### Detailed Analysis
 
-To get a formatted version of the raw transcript without summarization:
+```txt
+Title: Understanding Quantum Computing Basics
+
+1. Executive Summary
+Comprehensive introduction to quantum computing fundamentals, explaining how quantum 
+mechanics enables new computing paradigms. The presentation covers basic principles, 
+current challenges, and practical applications.
+
+2. Key Concepts Covered
+- Quantum superposition and its role in computation
+- Entanglement as a computational resource
+- Quantum gates and circuit model
+- Error correction challenges and solutions
+
+[... continues with more detailed analysis ...]
+```
+
+### Get Formatted Transcripts
 
 ```bash
 # Display formatted transcript
-yts transcript https://www.youtube.com/watch?v=dQw4w9WgXcQ
+yts transcript https://www.youtube.com/watch?v=video_id
 
-# Save formatted transcript to file
-yts transcript https://www.youtube.com/watch?v=dQw4w9WgXcQ -o my-transcript.txt
+# Save transcript to file
+yts transcript https://www.youtube.com/watch?v=video_id -o transcript.txt
+```
+
+#### Transcript Formatting Example
+
+Before (raw transcript):
+
+```txt
+hey guys today were gonna talk about quantum computing its pretty cool and it uses
+these things called qubits which are different from regular bits
+```
+
+After:
+
+```txt
+Hey guys! Today we're gonna talk about quantum computing. It's pretty cool and it 
+uses these things called qubits, which are different from regular bits.
+```
+
+## ⚙️ Configuration
+
+### Provider Selection
+
+```bash
+# Set default provider
+yts config set provider lmstudio  # or: ollama, claude, openai
+
+# Override for single command
+yts -p ollama https://youtube.com/watch?v=video_id
+```
+
+### API Key Management
+
+For cloud providers, securely store your API keys:
+
+```bash
+# Store API keys in system keyring
+yts apikey set claude your-api-key
+yts apikey set openai your-api-key
+
+# Remove stored keys
+yts apikey delete claude
+yts apikey delete openai
+
+# Verify key status
+yts config view
 ```
 
 ### Configuration Management
 
-YTS provides several commands to manage your configuration:
-
 ```bash
-# View current configuration
+# View current settings
 yts config view
 
-# Set configuration values
-yts config set provider ollama
-yts config set providers.ollama.model mistral
-yts config set providers.ollama.base_url http://localhost:11434
-
-# Edit configuration file directly in your default text editor
+# Edit configuration file
 yts config edit
+
+# Set individual values
+yts config set providers.claude.temperature 0.7
 ```
 
-### Customizing Prompts
-
-YTS uses different prompts for generating summaries and formatting transcripts. You can customize these prompts using the config editor:
+### Valid Configuration Paths
 
 ```bash
-yts config edit
+# Global
+provider                           # Active provider selection
+
+# LM Studio Settings
+providers.lmstudio.base_url       # API endpoint
+providers.lmstudio.model          # Model name
+
+# Ollama Settings
+providers.ollama.base_url         # API endpoint
+providers.ollama.model            # Model name
+
+# Claude Settings
+providers.claude.model            # Model name
+providers.claude.temperature      # Generation temperature (0.0-1.0)
+providers.claude.max_tokens       # Maximum response tokens
+providers.claude.timeout_seconds  # API timeout
+providers.claude.max_retries      # Retry attempts
+
+# OpenAI Settings
+providers.openai.model           # Model name
+providers.openai.temperature     # Generation temperature
+providers.openai.max_tokens      # Maximum response tokens
+providers.openai.timeout_seconds # API timeout
+providers.openai.max_retries     # Retry attempts
+providers.openai.organization_id # Optional org ID
 ```
 
-The configuration file contains the following customizable prompts:
-
-```json
-{
-  "summaries": {
-    "short": {
-      "system_prompt": "Create a concise summary of the following transcript..."
-    },
-    "long": {
-      "system_prompt": "Create a detailed analysis of the following transcript..."
-    }
-  },
-  "transcripts": {
-    "system_prompt": "Format the following raw Youtube transcript text..."
-  }
-}
-```
-
-You can modify these prompts to:
-
-- Change the summary style or format
-- Add specific focus areas
-- Customize the analysis structure
-- Adjust formatting rules
-- Add domain-specific instructions
-
-#### Configuration File Location
-
-The configuration file is stored in a platform-specific location:
+### Configuration File Location
 
 - Linux: `~/.config/yts/config.json`
 - macOS: `~/Library/Application Support/yts/config.json`
 - Windows: `%AppData%\yts\config.json`
 
-#### Valid Configuration Paths
-
-The following configuration paths can be set using `yts config set`:
-
-```txt
-provider                     # Active provider (lmstudio, ollama)
-
-providers.lmstudio.base_url  # LM Studio API endpoint
-providers.lmstudio.model     # LM Studio model name
-
-providers.ollama.base_url    # Ollama API endpoint
-providers.ollama.model       # Ollama model name
-
-providers.claude.model            # Claude model name
-providers.claude.temperature      # Temperature for generation (0.0-1.0)
-providers.claude.max_tokens       # Maximum tokens in response
-providers.claude.timeout_seconds  # API timeout in seconds
-providers.claude.max_retries      # Number of retry attempts
-```
-
 ### Environment Variables
 
-Override configuration settings using environment variables:
+Override settings using environment variables:
 
-- Provider Selection:
-  - `YTS_PROVIDER`: Select LLM provider ("lmstudio" or "ollama")
+```bash
+# Provider Selection
+export YTS_PROVIDER=claude
 
-- LM Studio Settings:
-  - `YTS_LMSTUDIO_URL`: Override the LM Studio API endpoint
-  - `YTS_LMSTUDIO_MODEL`: Override the model selection
+# LM Studio
+export YTS_LMSTUDIO_URL=http://localhost:1234
+export YTS_LMSTUDIO_MODEL=llama-2-13b-chat
 
-- Ollama Settings:
-  - `YTS_OLLAMA_URL`: Override the Ollama API endpoint
-  - `YTS_OLLAMA_MODEL`: Override the model selection
+# Ollama
+export YTS_OLLAMA_URL=http://localhost:11434
+export YTS_OLLAMA_MODEL=mistral
 
-- Claude Settings:
-  - `YTS_CLAUDE_MODEL`: Override the Claude model selection
-  - `YTS_CLAUDE_TEMPERATURE`: Override the temperature setting
-  - `YTS_CLAUDE_MAX_TOKENS`: Override the max tokens setting
-  - `YTS_CLAUDE_TIMEOUT`: Override the timeout setting
+# Claude
+export YTS_CLAUDE_MODEL=claude-3-sonnet-20240229
+export YTS_CLAUDE_TEMPERATURE=0.7
+export YTS_CLAUDE_MAX_TOKENS=4096
+export YTS_CLAUDE_TIMEOUT=120
 
-## How It Works
-
-1. **Transcript Fetching**: YTS fetches transcripts directly from YouTube using a pure Go implementation. It handles both manual and auto-generated captions, supporting multiple languages and formats. The fetcher:
-   - Extracts caption metadata from the video page
-   - Downloads the raw transcript XML
-   - Processes and formats the captions into clean text
-
-2. **AI Processing**: The transcript is processed using your chosen LLM provider to generate a coherent summary. The processing pipeline:
-   - Sends a system prompt to the LLM based on the selected summary type (short/long)
-   - Streams completions for responsive feedback
-
-3. **Output Generation**: The summary is displayed in the terminal, with:
-   - Proper text formatting and sanitization
-   - Real-time streaming output
-   - Optional file saving
-
-## Development
-
-### Project Structure
-
-```txt
-.
-├── cmd/                    # Command implementations
-│   ├── apikey.go          # API key management commands
-│   ├── config.go          # Configuration management
-│   ├── config_edit.go     # Edit config subcommand
-│   ├── config_set.go      # Set config subcommand
-│   ├── config_view.go     # View config subcommand
-│   ├── root.go            # Main command logic
-│   ├── transcript.go      # Transcript subcommand
-│   └── version.go         # Version subcommand
-├── internal/
-│   ├── config/            # Configuration management
-│   │   ├── config.go      # Config types and loading
-│   │   └── keyring.go     # Secure API key storage
-│   ├── llm/               # LLM provider integration
-│   │   ├── claude.go      # Claude provider
-│   │   ├── lmstudio.go    # LM Studio provider
-│   │   ├── ollama.go      # Ollama provider
-│   │   └── provider.go    # Provider interface
-│   └── transcript/        # Transcript processing
-│       └── fetcher.go     # YouTube transcript fetching
-├── .github/               # GitHub specific files
-│   └── workflows/         # GitHub Actions workflows
-├── main.go                # Entry point
-├── Makefile              # Build and development commands
-└── go.mod                # Go module definition
+# OpenAI
+export YTS_OPENAI_MODEL=gpt-4
+export YTS_OPENAI_TEMPERATURE=0.7
+export YTS_OPENAI_MAX_TOKENS=4096
+export YTS_OPENAI_TIMEOUT=120
+export YTS_OPENAI_ORG_ID=org-...
 ```
 
-### Building
+## ❗ Troubleshooting
 
-- Build for current platform: `make build`
-- Create release binaries: `make release`
-- Install globally: `make install`
+### Common Issues
 
-## Contributing
+1. "No transcript found"
+   - Verify the video has captions enabled
+   - For non-English videos, auto-translated captions may not be available
+   - Some videos have disabled transcripts - try another video
+
+2. "Provider not responding"
+   - Local providers (LM Studio/Ollama):
+     - Verify the service is running
+     - Check the correct port is set
+     - Ensure model is properly loaded
+   - Cloud providers (Claude/OpenAI):
+     - Verify API key is correct
+     - Check internet connectivity
+     - Confirm API service status
+
+3. "Rate limiting/Quota exceeded"
+   - Cloud providers: Check your API quota and limits
+   - Consider switching to local providers for high-volume use
+   - Implement exponential backoff in scripts
+
+4. Performance Considerations
+   - Large videos (>1 hour) may take longer to process
+   - Local providers are generally slower but free
+   - Cloud providers offer faster processing but incur costs
+   - Network speed affects transcript download time
+
+## 🔍 How It Works
+
+1. **Transcript Fetching**
+   - Extracts captions directly from YouTube
+   - Supports both manual and auto-generated captions
+   - Handles multiple languages and formats
+   - Processes raw XML into clean text
+
+2. **AI Processing**
+   - Sends raw transcript to chosen LLM
+   - Uses optimized prompts for different summary types
+   - Streams completions for real-time feedback
+   - Implements retry logic and error handling
+
+3. **Output Handling**
+   - Real-time streaming to terminal
+   - Optional file output
+   - Proper text formatting and sanitization
+   - Error handling and logging
+
+## 🛡️ Technical Details
+
+### Performance
+
+- Transcript fetching: 1-3 seconds
+- Summary generation:
+  - Local providers: 30-120 seconds
+  - Cloud providers: 10-30 seconds
+
+### Limitations
+
+- Maximum video length: None (but longer videos = longer processing)
+- Transcript availability depends on YouTube
+- Rate limits apply for cloud providers
+- Local processing speed depends on hardware
+
+## 📚 Contributing
 
 1. Fork the repository
 2. Create your feature branch: `git checkout -b feature/amazing-feature`
-3. Open a pull request
+3. Commit your changes: `git commit -am 'Add some feature'`
+4. Push to the branch: `git push origin feature/amazing-feature`
+5. Open a Pull Request
 
-## Legal Notice
+## ⚖️ Legal Notice
 
-This tool accesses publicly available YouTube video transcripts. While I believe this falls within fair use, users should:
+This tool accesses publicly available YouTube video transcripts. While I believe this falls under fair use:
 
 - Review YouTube's Terms of Service
-- Use the tool responsibly
+- Use responsibly and respect rate limits
 - Consider YouTube's official API for commercial applications
+- Don't use for mass data collection
 
-## License
+## 📄 License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## Acknowledgments
+## 🙏 Acknowledgments
 
-- Transcript fetching approach inspired by [youtube-transcript-api](https://github.com/jdepoix/youtube-transcript-api) (reimplemented in pure Go)
+- Transcript handling inspired by [youtube-transcript-api](https://github.com/jdepoix/youtube-transcript-api)
 - Built with [Cobra](https://github.com/spf13/cobra) CLI framework
 - Configuration managed with [Viper](https://github.com/spf13/viper)
+- Secure key storage by [go-keyring](https://github.com/zalando/go-keyring)
