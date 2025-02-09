@@ -37,7 +37,6 @@ var setKeyCmd = &cobra.Command{
 			return fmt.Errorf("failed to set API key: %w", err)
 		}
 
-		fmt.Printf("Successfully stored API key for %s\n", provider)
 		return nil
 	},
 }
@@ -59,7 +58,6 @@ var deleteKeyCmd = &cobra.Command{
 			return fmt.Errorf("failed to delete API key: %w", err)
 		}
 
-		fmt.Printf("Successfully deleted API key for %s\n", provider)
 		return nil
 	},
 }
