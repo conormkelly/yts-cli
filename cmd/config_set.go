@@ -9,11 +9,23 @@ import (
 )
 
 var validPaths = map[string]struct{}{
-	"provider":                    {},
+	// Global
+	"provider": {},
+
+	// LM Studio
 	"providers.lmstudio.base_url": {},
 	"providers.lmstudio.model":    {},
-	"providers.ollama.base_url":   {},
-	"providers.ollama.model":      {},
+
+	// Ollama
+	"providers.ollama.base_url": {},
+	"providers.ollama.model":    {},
+
+	// Claude
+	"providers.claude.model":           {},
+	"providers.claude.temperature":     {},
+	"providers.claude.max_tokens":      {},
+	"providers.claude.timeout_seconds": {},
+	"providers.claude.max_retries":     {},
 }
 
 var setCmd = &cobra.Command{
@@ -43,13 +55,12 @@ var setCmd = &cobra.Command{
 			return fmt.Errorf("failed to save configuration: %v", err)
 		}
 
-		fmt.Printf("Successfully set %s to %s\n", key, value)
 		return nil
 	},
 }
 
 func isValidProvider(provider string) bool {
-	return provider == "lmstudio" || provider == "ollama"
+	return provider == "lmstudio" || provider == "ollama" || provider == "claude"
 }
 
 func getValidKeys() []string {

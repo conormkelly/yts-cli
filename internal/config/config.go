@@ -20,6 +20,7 @@ type Config struct {
 type ProvidersConfig struct {
 	LMStudio LMStudioConfig `mapstructure:"lmstudio"`
 	Ollama   OllamaConfig   `mapstructure:"ollama"`
+	Claude   ClaudeConfig   `mapstructure:"claude"`
 }
 
 type LMStudioConfig struct {
@@ -30,6 +31,14 @@ type LMStudioConfig struct {
 type OllamaConfig struct {
 	BaseURL string `mapstructure:"base_url"`
 	Model   string `mapstructure:"model"`
+}
+
+type ClaudeConfig struct {
+	Model       string  `mapstructure:"model"`
+	Temperature float64 `mapstructure:"temperature"`
+	MaxTokens   int     `mapstructure:"max_tokens"`
+	TimeoutSecs int     `mapstructure:"timeout_seconds"`
+	MaxRetries  int     `mapstructure:"max_retries"`
 }
 
 // SummaryConfig holds the different summary templates
@@ -47,14 +56,23 @@ type TranscriptConfig struct {
 }
 
 const (
-	defaultProvider      = "lmstudio"
+	// Global
+	defaultProvider = "lmstudio"
+	configFileName  = "config"
+	configFileType  = "json"
+	configDirName   = "yts"
+
 	defaultLMStudioURL   = "http://localhost:1234"
 	defaultLMStudioModel = "llama-3.2-3b-instruct"
-	defaultOllamaURL     = "http://localhost:11434"
-	defaultOllamaModel   = "llama3.2"
-	configFileName       = "config"
-	configFileType       = "json"
-	configDirName        = "yts"
+
+	defaultOllamaURL   = "http://localhost:11434"
+	defaultOllamaModel = "llama3.2"
+
+	defaultClaudeModel          = "claude-3-5-sonnet-20241022"
+	defaultClaudeTemperature    = 0.3  // Lower for more focused summaries
+	defaultClaudeMaxTokens      = 8192 // Generous limit for detailed analysis
+	defaultClaudeTimeoutSeconds = 120  // Long timeout for big transcripts
+	defaultClaudeMaxRetries     = 3
 )
 
 // Initialize sets up Viper with our configuration
@@ -114,8 +132,15 @@ func setDefaults() {
 	// Provider-specific defaults
 	viper.SetDefault("providers.lmstudio.base_url", defaultLMStudioURL)
 	viper.SetDefault("providers.lmstudio.model", defaultLMStudioModel)
+
 	viper.SetDefault("providers.ollama.base_url", defaultOllamaURL)
 	viper.SetDefault("providers.ollama.model", defaultOllamaModel)
+
+	viper.SetDefault("providers.claude.model", defaultClaudeModel)
+	viper.SetDefault("providers.claude.temperature", defaultClaudeTemperature)
+	viper.SetDefault("providers.claude.max_tokens", defaultClaudeMaxTokens)
+	viper.SetDefault("providers.claude.timeout_seconds", defaultClaudeTimeoutSeconds)
+	viper.SetDefault("providers.claude.max_retries", defaultClaudeMaxRetries)
 
 	// Set summary template defaults
 	viper.SetDefault("summaries.short.system_prompt", `Create a concise summary of the following transcript. Focus on:
@@ -144,7 +169,7 @@ Keep total length under 150 words.`)
 
 Preserve technical accuracy while ensuring readability. Include relevant quotes when they significantly support key points.`)
 
-	viper.SetDefault("transcripts.system_prompt", `Format the following raw transcript text.
+	viper.SetDefault("transcripts.system_prompt", `Format the following raw Youtube transcript text.
 - Add appropriate capitalization and punctuation
 - Keep all original words exactly as they appear
 - Never add any additional commentary
@@ -163,6 +188,12 @@ func bindEnvVars() {
 	// Ollama env vars
 	viper.BindEnv("providers.ollama.base_url", "YTS_OLLAMA_URL")
 	viper.BindEnv("providers.ollama.model", "YTS_OLLAMA_MODEL")
+
+	// Claude env vars
+	viper.BindEnv("providers.claude.model", "YTS_CLAUDE_MODEL")
+	viper.BindEnv("providers.claude.temperature", "YTS_CLAUDE_TEMPERATURE")
+	viper.BindEnv("providers.claude.max_tokens", "YTS_CLAUDE_MAX_TOKENS")
+	viper.BindEnv("providers.claude.timeout", "YTS_CLAUDE_TIMEOUT")
 }
 
 // GetSystemPrompt returns the appropriate system prompt based on summary type

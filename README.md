@@ -5,8 +5,10 @@ A command-line tool that fetches YouTube video transcripts and generates concise
 ## Features
 
 - 🎥 Fetch transcripts from any YouTube video with available captions
-- 🤖 Generate AI-powered summaries using local LLM models
-- 🔄 Support for multiple LLM providers (LM Studio, Ollama)
+- 🤖 Generate AI-powered summaries using local or hosted LLMs
+- 🔄 Support for multiple LLM providers
+  - Local (LM Studio, Ollama)
+  - Hosted (Claude)
 - 📝 Multiple summary types (short or long/detailed)
 - 💾 Save summaries to an output file
 - 🌐 Support for videos with auto-generated captions
@@ -18,15 +20,23 @@ A command-line tool that fetches YouTube video transcripts and generates concise
 
 You'll need one of the following LLM providers:
 
-### LM Studio
+### Local
+
+#### LM Studio
 
 - [LM Studio](https://lmstudio.ai/) installation
 - Any compatible model
 
-### Ollama
+#### Ollama
 
 - [Ollama](https://ollama.ai/) installation
 - Any compatible model (e.g., llama2, codellama, mistral)
+
+### Hosted
+
+### Claude
+
+- [Anthropic API key](https://www.anthropic.com/api)
 
 ## Installation
 
@@ -75,24 +85,41 @@ YTS supports multiple LLM providers (LM Studio and Ollama). There are two ways t
 
 1. Set the default provider:
 
-```bash
-# Set LM Studio as default
-yts config set provider lmstudio
+   ```bash
+   # Set LM Studio as default
+   yts config set provider lmstudio
 
-# Set Ollama as default
-yts config set provider ollama
+   # Set Ollama as default
+   yts config set provider ollama
+
+   # Set Claude as default
+   yts config set provider claude
+   yts apikey set claude your-api-key-here
+   ```
 
 2. Override the provider temporarily using flags:
 
+   ```bash
+   # Override with --provider flag
+   yts --provider ollama https://www.youtube.com/watch?v=dQw4w9WgXcQ
+
+   # Or use the shorter -p flag
+   yts -p ollama https://www.youtube.com/watch?v=dQw4w9WgXcQ
+   ```
+
+   The provider flag (-p or --provider) takes precedence over your default configuration when specified.
+
+### API Key Management
+
+For Claude integration, you'll need to set up your API key:
+
 ```bash
-# Override with --provider flag
-yts --provider ollama https://www.youtube.com/watch?v=dQw4w9WgXcQ
+# Store Claude API key securely in system keyring
+yts apikey set claude your-api-key-here
 
-# Or use the shorter -p flag
-yts -p ollama https://www.youtube.com/watch?v=dQw4w9WgXcQ
+# Remove Claude API key
+yts apikey delete claude
 ```
-
-The provider flag (-p or --provider) takes precedence over your default configuration when specified.
 
 ### Summary Types
 
@@ -111,7 +138,7 @@ yts https://www.youtube.com/watch?v=dQw4w9WgXcQ -l
 Save the summary to a file:
 
 ```bash
-yts https://www.youtube.com/watch?v=dQw4w9WgXcQ --output summary.txt
+yts https://www.youtube.com/watch?v=dQw4w9WgXcQ -o summary.txt
 ```
 
 ### Transcript Formatting
@@ -157,10 +184,18 @@ The following configuration paths can be set using `yts config set`:
 
 ```txt
 provider                     # Active provider (lmstudio, ollama)
+
 providers.lmstudio.base_url  # LM Studio API endpoint
 providers.lmstudio.model     # LM Studio model name
+
 providers.ollama.base_url    # Ollama API endpoint
 providers.ollama.model       # Ollama model name
+
+providers.claude.model            # Claude model name
+providers.claude.temperature      # Temperature for generation (0.0-1.0)
+providers.claude.max_tokens       # Maximum tokens in response
+providers.claude.timeout_seconds  # API timeout in seconds
+providers.claude.max_retries      # Number of retry attempts
 ```
 
 ### Environment Variables
@@ -177,6 +212,12 @@ Override configuration settings using environment variables:
 - Ollama Settings:
   - `YTS_OLLAMA_URL`: Override the Ollama API endpoint
   - `YTS_OLLAMA_MODEL`: Override the model selection
+
+- Claude Settings:
+  - `YTS_CLAUDE_MODEL`: Override the Claude model selection
+  - `YTS_CLAUDE_TEMPERATURE`: Override the temperature setting
+  - `YTS_CLAUDE_MAX_TOKENS`: Override the max tokens setting
+  - `YTS_CLAUDE_TIMEOUT`: Override the timeout setting
 
 ## How It Works
 
@@ -200,28 +241,31 @@ Override configuration settings using environment variables:
 
 ```txt
 .
-├── cmd/                   # Command implementations
+├── cmd/                    # Command implementations
+│   ├── apikey.go          # API key management commands
 │   ├── config.go          # Configuration management
 │   ├── config_edit.go     # Edit config subcommand
 │   ├── config_set.go      # Set config subcommand
 │   ├── config_view.go     # View config subcommand
-│   ├── root.go           # Main command logic
-│   ├── transcript.go     # Transcript subcommand
-│   └── version.go        # Version subcommand
+│   ├── root.go            # Main command logic
+│   ├── transcript.go      # Transcript subcommand
+│   └── version.go         # Version subcommand
 ├── internal/
-│   ├── config/           # Configuration management
-│   │   └── config.go     # Config types and loading
-│   ├── llm/              # LLM provider integration
-│   │   ├── lmstudio.go   # LM Studio provider
-│   │   ├── ollama.go     # Ollama provider
-│   │   └── provider.go   # Provider interface
-│   └── transcript/       # Transcript processing
-│       └── fetcher.go    # YouTube transcript fetching
-├── .github/              # GitHub specific files
-│   └── workflows/        # GitHub Actions workflows
-├── main.go               # Entry point
-├── Makefile             # Build and development commands
-└── go.mod               # Go module definition
+│   ├── config/            # Configuration management
+│   │   ├── config.go      # Config types and loading
+│   │   └── keyring.go     # Secure API key storage
+│   ├── llm/               # LLM provider integration
+│   │   ├── claude.go      # Claude provider
+│   │   ├── lmstudio.go    # LM Studio provider
+│   │   ├── ollama.go      # Ollama provider
+│   │   └── provider.go    # Provider interface
+│   └── transcript/        # Transcript processing
+│       └── fetcher.go     # YouTube transcript fetching
+├── .github/               # GitHub specific files
+│   └── workflows/         # GitHub Actions workflows
+├── main.go                # Entry point
+├── Makefile              # Build and development commands
+└── go.mod                # Go module definition
 ```
 
 ### Building

@@ -25,6 +25,9 @@ var viewCmd = &cobra.Command{
 		}
 		configPath := filepath.Join(configDir, "yts", "config.json")
 
+		keyManager := config.NewAPIKeyManager()
+		isClaudeAPIKeySet := keyManager.HasAPIKey("claude")
+
 		// Print header with nice formatting
 		fmt.Printf("YTS Configuration\n%s\n\n", strings.Repeat("=", 17))
 
@@ -33,30 +36,29 @@ var viewCmd = &cobra.Command{
 		if !fileExists(configPath) {
 			fmt.Println("Status: Using default configuration (no config file found)")
 		} else {
-			fmt.Println("Status: Configuration file loaded")
+			fmt.Println("Status: Loaded")
 		}
 		fmt.Println()
 
 		// Provider settings
-		fmt.Println("Active Provider Settings")
-		fmt.Printf("├── Provider: %s\n", cfg.Provider)
-		if cfg.Provider == "lmstudio" {
-			fmt.Printf("├── Base URL: %s\n", cfg.Providers.LMStudio.BaseURL)
-			fmt.Printf("└── Model: %s\n", cfg.Providers.LMStudio.Model)
-		} else {
-			fmt.Printf("├── Base URL: %s\n", cfg.Providers.Ollama.BaseURL)
-			fmt.Printf("└── Model: %s\n", cfg.Providers.Ollama.Model)
-		}
-		fmt.Println()
+		fmt.Printf("Active Provider: %s\n", cfg.Provider)
 
 		// Show available providers
-		fmt.Println("Available Providers")
+		fmt.Println("\nProvider Settings")
+		fmt.Println("│")
 		fmt.Println("├── LM Studio")
 		fmt.Printf("│   ├── Base URL: %s\n", cfg.Providers.LMStudio.BaseURL)
 		fmt.Printf("│   └── Model: %s\n", cfg.Providers.LMStudio.Model)
-		fmt.Println("└── Ollama")
-		fmt.Printf("    ├── Base URL: %s\n", cfg.Providers.Ollama.BaseURL)
-		fmt.Printf("    └── Model: %s\n", cfg.Providers.Ollama.Model)
+		fmt.Println("├── Ollama")
+		fmt.Printf("│   ├── Base URL: %s\n", cfg.Providers.Ollama.BaseURL)
+		fmt.Printf("│   └── Model: %s\n", cfg.Providers.Ollama.Model)
+		fmt.Println("└── Claude")
+		fmt.Printf("    ├── Model: %s\n", cfg.Providers.Claude.Model)
+		fmt.Printf("    ├── Temperature: %.1f\n", cfg.Providers.Claude.Temperature)
+		fmt.Printf("    ├── Max Tokens: %d\n", cfg.Providers.Claude.MaxTokens)
+		fmt.Printf("    ├── Timeout: %d seconds\n", cfg.Providers.Claude.TimeoutSecs)
+		fmt.Printf("    ├── Max Retries: %d\n", cfg.Providers.Claude.MaxRetries)
+		fmt.Printf("    └── API Key Set: %v\n", isClaudeAPIKeySet)
 
 		return nil
 	},

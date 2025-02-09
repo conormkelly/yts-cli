@@ -17,6 +17,8 @@ func NewProvider(cfg *config.Config) (Provider, error) {
 		return NewLMStudioProvider(cfg.Providers.LMStudio.BaseURL, cfg.Providers.LMStudio.Model), nil
 	case "ollama":
 		return NewOllamaProvider(cfg.Providers.Ollama.BaseURL, cfg.Providers.Ollama.Model), nil
+	case "claude":
+		return NewClaudeProvider(cfg)
 	default:
 		return nil, fmt.Errorf("unsupported provider type: %s", cfg.Provider)
 	}
