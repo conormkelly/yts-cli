@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	keyringService = "yts-cli"
+	KeyringService = "yts-cli"
 )
 
 // APIKeyManager handles secure storage and retrieval of API keys
@@ -19,7 +19,7 @@ type APIKeyManager struct {
 // NewAPIKeyManager creates a new instance of APIKeyManager
 func NewAPIKeyManager() *APIKeyManager {
 	return &APIKeyManager{
-		service: keyringService,
+		service: KeyringService,
 	}
 }
 

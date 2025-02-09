@@ -19,6 +19,8 @@ func NewProvider(cfg *config.Config) (Provider, error) {
 		return NewOllamaProvider(cfg.Providers.Ollama.BaseURL, cfg.Providers.Ollama.Model), nil
 	case "claude":
 		return NewClaudeProvider(cfg)
+	case "openai":
+		return NewOpenAIProvider(cfg)
 	default:
 		return nil, fmt.Errorf("unsupported provider type: %s", cfg.Provider)
 	}

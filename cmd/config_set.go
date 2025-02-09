@@ -26,6 +26,14 @@ var validPaths = map[string]struct{}{
 	"providers.claude.max_tokens":      {},
 	"providers.claude.timeout_seconds": {},
 	"providers.claude.max_retries":     {},
+
+	// OpenAI
+	"providers.openai.model":           {},
+	"providers.openai.temperature":     {},
+	"providers.openai.max_tokens":      {},
+	"providers.openai.timeout_seconds": {},
+	"providers.openai.max_retries":     {},
+	"providers.openai.organization_id": {},
 }
 
 var setCmd = &cobra.Command{
@@ -44,7 +52,7 @@ var setCmd = &cobra.Command{
 
 		// Validate provider if setting provider
 		if key == "provider" && !isValidProvider(value) {
-			return fmt.Errorf("invalid provider: %s\nValid providers: lmstudio, ollama", value)
+			return fmt.Errorf("invalid provider: %s\nValid providers: lmstudio, ollama, claude, openai", value)
 		}
 
 		// Set the value
@@ -60,7 +68,13 @@ var setCmd = &cobra.Command{
 }
 
 func isValidProvider(provider string) bool {
-	return provider == "lmstudio" || provider == "ollama" || provider == "claude"
+	validProviders := map[string]bool{
+		"lmstudio": true,
+		"ollama":   true,
+		"claude":   true,
+		"openai":   true,
+	}
+	return validProviders[provider]
 }
 
 func getValidKeys() []string {

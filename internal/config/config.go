@@ -21,6 +21,7 @@ type ProvidersConfig struct {
 	LMStudio LMStudioConfig `mapstructure:"lmstudio"`
 	Ollama   OllamaConfig   `mapstructure:"ollama"`
 	Claude   ClaudeConfig   `mapstructure:"claude"`
+	OpenAI   OpenAIConfig   `mapstructure:"openai"`
 }
 
 type LMStudioConfig struct {
@@ -39,6 +40,15 @@ type ClaudeConfig struct {
 	MaxTokens   int     `mapstructure:"max_tokens"`
 	TimeoutSecs int     `mapstructure:"timeout_seconds"`
 	MaxRetries  int     `mapstructure:"max_retries"`
+}
+
+type OpenAIConfig struct {
+	Model       string  `mapstructure:"model"`
+	Temperature float64 `mapstructure:"temperature"`
+	MaxTokens   int     `mapstructure:"max_tokens"`
+	TimeoutSecs int     `mapstructure:"timeout_seconds"`
+	MaxRetries  int     `mapstructure:"max_retries"`
+	OrgID       string  `mapstructure:"organization_id"`
 }
 
 // SummaryConfig holds the different summary templates
@@ -73,6 +83,12 @@ const (
 	defaultClaudeMaxTokens      = 8192 // Generous limit for detailed analysis
 	defaultClaudeTimeoutSeconds = 120  // Long timeout for big transcripts
 	defaultClaudeMaxRetries     = 3
+
+	defaultOpenAIModel          = "gpt-4o" // Latest model for best summaries
+	defaultOpenAITemperature    = 0.3      // Lower for more focused summaries
+	defaultOpenAIMaxTokens      = 8192     // Conservative limit for most transcripts
+	defaultOpenAITimeoutSeconds = 120      // Long timeout for big transcripts
+	defaultOpenAIMaxRetries     = 3
 )
 
 // Initialize sets up Viper with our configuration
@@ -142,6 +158,13 @@ func setDefaults() {
 	viper.SetDefault("providers.claude.timeout_seconds", defaultClaudeTimeoutSeconds)
 	viper.SetDefault("providers.claude.max_retries", defaultClaudeMaxRetries)
 
+	viper.SetDefault("providers.openai.model", defaultOpenAIModel)
+	viper.SetDefault("providers.openai.temperature", defaultOpenAITemperature)
+	viper.SetDefault("providers.openai.max_tokens", defaultOpenAIMaxTokens)
+	viper.SetDefault("providers.openai.timeout_seconds", defaultOpenAITimeoutSeconds)
+	viper.SetDefault("providers.openai.max_retries", defaultOpenAIMaxRetries)
+	viper.SetDefault("providers.openai.organization_id", "") // Empty default for optional org ID
+
 	// Set summary template defaults
 	viper.SetDefault("summaries.short.system_prompt", `Create a concise summary of the following transcript. Focus on:
 - Core message in 1-2 sentences
@@ -194,6 +217,13 @@ func bindEnvVars() {
 	viper.BindEnv("providers.claude.temperature", "YTS_CLAUDE_TEMPERATURE")
 	viper.BindEnv("providers.claude.max_tokens", "YTS_CLAUDE_MAX_TOKENS")
 	viper.BindEnv("providers.claude.timeout", "YTS_CLAUDE_TIMEOUT")
+
+	// OpenAI env vars
+	viper.BindEnv("providers.openai.model", "YTS_OPENAI_MODEL")
+	viper.BindEnv("providers.openai.temperature", "YTS_OPENAI_TEMPERATURE")
+	viper.BindEnv("providers.openai.max_tokens", "YTS_OPENAI_MAX_TOKENS")
+	viper.BindEnv("providers.openai.timeout", "YTS_OPENAI_TIMEOUT")
+	viper.BindEnv("providers.openai.organization_id", "YTS_OPENAI_ORG_ID")
 }
 
 // GetSystemPrompt returns the appropriate system prompt based on summary type

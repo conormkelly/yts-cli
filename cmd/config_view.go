@@ -52,13 +52,23 @@ var viewCmd = &cobra.Command{
 		fmt.Println("├── Ollama")
 		fmt.Printf("│   ├── Base URL: %s\n", cfg.Providers.Ollama.BaseURL)
 		fmt.Printf("│   └── Model: %s\n", cfg.Providers.Ollama.Model)
-		fmt.Println("└── Claude")
-		fmt.Printf("    ├── Model: %s\n", cfg.Providers.Claude.Model)
-		fmt.Printf("    ├── Temperature: %.1f\n", cfg.Providers.Claude.Temperature)
-		fmt.Printf("    ├── Max Tokens: %d\n", cfg.Providers.Claude.MaxTokens)
-		fmt.Printf("    ├── Timeout: %d seconds\n", cfg.Providers.Claude.TimeoutSecs)
-		fmt.Printf("    ├── Max Retries: %d\n", cfg.Providers.Claude.MaxRetries)
-		fmt.Printf("    └── API Key Set: %v\n", isClaudeAPIKeySet)
+		fmt.Println("├── Claude")
+		fmt.Printf("│   ├── Model: %s\n", cfg.Providers.Claude.Model)
+		fmt.Printf("│   ├── Temperature: %.1f\n", cfg.Providers.Claude.Temperature)
+		fmt.Printf("│   ├── Max Tokens: %d\n", cfg.Providers.Claude.MaxTokens)
+		fmt.Printf("│   ├── Timeout: %d seconds\n", cfg.Providers.Claude.TimeoutSecs)
+		fmt.Printf("│   ├── Max Retries: %d\n", cfg.Providers.Claude.MaxRetries)
+		fmt.Printf("│   └── API Key Set: %v\n", isClaudeAPIKeySet)
+		fmt.Println("└── OpenAI")
+		fmt.Printf("    ├── Model: %s\n", cfg.Providers.OpenAI.Model)
+		fmt.Printf("    ├── Temperature: %.1f\n", cfg.Providers.OpenAI.Temperature)
+		fmt.Printf("    ├── Max Tokens: %d\n", cfg.Providers.OpenAI.MaxTokens)
+		fmt.Printf("    ├── Timeout: %d seconds\n", cfg.Providers.OpenAI.TimeoutSecs)
+		fmt.Printf("    ├── Max Retries: %d\n", cfg.Providers.OpenAI.MaxRetries)
+		if cfg.Providers.OpenAI.OrgID != "" {
+			fmt.Printf("    ├── Organization ID: %s\n", cfg.Providers.OpenAI.OrgID)
+		}
+		fmt.Printf("    └── API Key Set: %v\n", keyManager.HasAPIKey("openai"))
 
 		return nil
 	},

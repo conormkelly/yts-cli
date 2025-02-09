@@ -15,9 +15,8 @@ import (
 )
 
 const (
-	claudeAPIURL   = "https://api.anthropic.com/v1/messages"
-	keyringService = "yts-cli"
-	retryBaseDelay = 1 * time.Second
+	claudeAPIURL         = "https://api.anthropic.com/v1/messages"
+	claudeRetryBaseDelay = 1 * time.Second
 )
 
 type ClaudeProvider struct {
@@ -63,7 +62,7 @@ type ClaudeStreamEvent struct {
 
 func NewClaudeProvider(cfg *config.Config) (*ClaudeProvider, error) {
 	// Get API key from keyring
-	apiKey, err := keyring.Get(keyringService, "claude")
+	apiKey, err := keyring.Get(config.KeyringService, "claude")
 	if err != nil {
 		return nil, fmt.Errorf("failed to get Claude API key from keyring: %w", err)
 	}
