@@ -143,15 +143,32 @@ current challenges, and practical applications.
 [... continues with more detailed analysis ...]
 ```
 
-### Get Formatted Transcripts
+### Transcript Formatting
+
+Get video transcripts with various formatting options:
 
 ```bash
-# Display formatted transcript
-yts transcript https://www.youtube.com/watch?v=video_id
+# Display formatted transcript (default)
+yts transcript https://www.youtube.com/watch?v=dQw4w9WgXcQ
 
-# Save transcript to file
-yts transcript https://www.youtube.com/watch?v=video_id -o transcript.txt
+# Display raw unformatted transcript
+yts transcript --raw https://www.youtube.com/watch?v=dQw4w9WgXcQ
+
+# Include timestamps in the output
+yts transcript --timestamps https://www.youtube.com/watch?v=dQw4w9WgXcQ
+
+# Combine flags (raw output with timestamps)
+yts transcript --raw --timestamps https://www.youtube.com/watch?v=dQw4w9WgXcQ
+
+# Save to file (works with any flag combination)
+yts transcript -o transcript.txt https://www.youtube.com/watch?v=dQw4w9WgXcQ
 ```
+
+Flags:
+
+- `-o, --output`: Save transcript to a file
+- `-r, --raw`: Output raw transcript without AI formatting
+- `-t, --timestamps`: Include timestamps in the output
 
 #### Transcript Formatting Example
 

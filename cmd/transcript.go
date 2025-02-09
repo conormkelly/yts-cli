@@ -12,30 +12,22 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var (
+	rawOutput         bool
+	includeTimestamps bool
+)
+
 var transcriptCmd = &cobra.Command{
 	Use:   "transcript [youtube-url]",
-	Short: "Format the raw transcript with proper capitalization and punctuation",
-	Args:  cobra.ExactArgs(1),
+	Short: "Get the transcript only, no summarization",
+	Long: `Get the video transcript. By default, applies proper formatting including
+capitalization and punctuation. Use --raw for unformatted output.`,
+	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		videoURL := args[0]
 
-		// Get configuration
-		cfg, err := config.GetConfig()
-		if err != nil {
-			return fmt.Errorf("failed to get config: %v", err)
-		}
-
 		// Initialize transcript fetcher
 		fetcher := transcript.NewTranscriptFetcher()
-		if err != nil {
-			return fmt.Errorf("failed to initialize transcript fetcher: %v", err)
-		}
-
-		// Initialize LLM client
-		llmClient, err := llm.NewProvider(cfg)
-		if err != nil {
-			return fmt.Errorf("failed to initialize provider: %v", err)
-		}
 
 		// Fetch transcript
 		title, rawTranscript, err := fetcher.Fetch(videoURL)
@@ -44,9 +36,6 @@ var transcriptCmd = &cobra.Command{
 		}
 
 		fmt.Printf("\nTitle: %s\n\n", title)
-
-		// TODO: make this a flag
-		includeTimestamps := false
 
 		var transcriptText strings.Builder
 		for i := range rawTranscript {
@@ -57,23 +46,43 @@ var transcriptCmd = &cobra.Command{
 			}
 		}
 
-		// Format transcript using streaming
-		var formattedTranscript strings.Builder
+		var finalOutput string
+		if rawOutput {
+			// For raw output, just use the transcript text directly
+			finalOutput = transcriptText.String()
+			fmt.Print(finalOutput)
+		} else {
+			// Get configuration for formatted output
+			cfg, err := config.GetConfig()
+			if err != nil {
+				return fmt.Errorf("failed to get config: %v", err)
+			}
 
-		err = llmClient.Stream(
-			cfg.Transcripts.SystemPrompt,
-			transcriptText.String(),
-			func(chunk string) {
-				fmt.Print(chunk)
-				formattedTranscript.WriteString(chunk)
-			},
-		)
-		if err != nil {
-			return fmt.Errorf("failed to format transcript: %v", err)
+			// Initialize LLM client
+			llmClient, err := llm.NewProvider(cfg)
+			if err != nil {
+				return fmt.Errorf("failed to initialize provider: %v", err)
+			}
+
+			// Format transcript using streaming
+			var formattedTranscript strings.Builder
+
+			err = llmClient.Stream(
+				cfg.Transcripts.SystemPrompt,
+				transcriptText.String(),
+				func(chunk string) {
+					fmt.Print(chunk)
+					formattedTranscript.WriteString(chunk)
+				},
+			)
+			if err != nil {
+				return fmt.Errorf("failed to format transcript: %v", err)
+			}
+			// Add a newline at the end of the stream
+			formattedTranscript.WriteString("\n")
+			fmt.Println()
+			finalOutput = formattedTranscript.String()
 		}
-		// Add a newline at the end of the stream
-		formattedTranscript.WriteString("\n")
-		fmt.Println()
 
 		// Handle output file if specified
 		if outputFile != "" {
@@ -92,10 +101,10 @@ var transcriptCmd = &cobra.Command{
 				return fmt.Errorf("failed to create output directory: %v", err)
 			}
 
-			if err := os.WriteFile(outputFile, []byte(formattedTranscript.String()), 0644); err != nil {
+			if err := os.WriteFile(outputFile, []byte(finalOutput), 0644); err != nil {
 				return fmt.Errorf("failed to write output file: %v", err)
 			}
-			fmt.Printf("\nFormatted transcript saved to %s\n", outputFile)
+			fmt.Printf("\nTranscript saved to %s\n", outputFile)
 		}
 
 		return nil
@@ -105,4 +114,6 @@ var transcriptCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(transcriptCmd)
 	transcriptCmd.Flags().StringVarP(&outputFile, "output", "o", "", "output file path")
+	transcriptCmd.Flags().BoolVarP(&rawOutput, "raw", "r", false, "output raw transcript without formatting")
+	transcriptCmd.Flags().BoolVarP(&includeTimestamps, "timestamps", "t", false, "include timestamps in the output")
 }
