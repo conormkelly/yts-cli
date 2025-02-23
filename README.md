@@ -70,7 +70,17 @@ These require API keys:
 
 ### Option 1: Prebuilt Binaries (Recommended)
 
-Download the appropriate binary for your system from our [releases page](https://github.com/conormkelly/yts-cli/releases/latest).
+#### Unix-like Systems (Linux/macOS)
+
+```bash
+curl -sSL https://raw.githubusercontent.com/conormkelly/yts-cli/main/install.sh | bash
+```
+
+#### Windows
+
+```powershell
+irm https://raw.githubusercontent.com/conormkelly/yts-cli/main/install.ps1 | iex
+```
 
 ### Option 2: Build from Source
 
