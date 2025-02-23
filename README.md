@@ -15,7 +15,14 @@ A powerful command-line tool that leverages AI to turn YouTube video transcripts
 
 ## 🚀 Quick Start
 
-1. Download the latest release from the [releases page](https://github.com/conormkelly/yts-cli/releases/latest)
+1. Install YTS:
+
+   ```bash
+   # Linux/macOS
+   curl -sSL https://raw.githubusercontent.com/conormkelly/yts-cli/main/install.sh | bash
+
+   # Windows
+   irm https://raw.githubusercontent.com/conormkelly/yts-cli/main/install.ps1 | iex
 
 2. Choose and set up a provider:
 
