@@ -29,7 +29,7 @@ var setKeyCmd = &cobra.Command{
 		}
 
 		if provider == "claude" && !strings.HasPrefix(apiKey, "sk-") {
-			return fmt.Errorf("Claude API keys should start with 'sk-'")
+			return fmt.Errorf("claude API keys should start with 'sk-'")
 		}
 
 		keyManager := config.NewAPIKeyManager()

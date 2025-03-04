@@ -4,16 +4,22 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"reflect"
 
 	"github.com/spf13/viper"
 )
 
+// Current config value
+const currentConfigVersion = "1.0.1"
+
 // Config holds all configuration values
 type Config struct {
-	Provider    string           `mapstructure:"provider"`  // Current provider (lmstudio, ollama)
-	Providers   ProvidersConfig  `mapstructure:"providers"` // Provider-specific configs
+	Version     string           `mapstructure:"version"`
+	Provider    string           `mapstructure:"provider"` // Current provider (lmstudio, ollama)
+	Providers   ProvidersConfig  `mapstructure:"providers"`
 	Summaries   SummaryConfig    `mapstructure:"summaries"`
 	Transcripts TranscriptConfig `mapstructure:"transcripts"`
+	Queries     QueryConfig      `mapstructure:"queries"`
 }
 
 // ProvidersConfig holds settings for each provider
@@ -62,6 +68,11 @@ type SummaryTemplate struct {
 }
 
 type TranscriptConfig struct {
+	SystemPrompt string `mapstructure:"system_prompt"`
+}
+
+// QueryConfig holds the query template
+type QueryConfig struct {
 	SystemPrompt string `mapstructure:"system_prompt"`
 }
 
@@ -120,6 +131,9 @@ func Initialize() error {
 	if err := viper.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
 			// Config file doesn't exist, create it with defaults
+			setDefaults()
+			viper.Set("version", currentConfigVersion) // Set version for new config
+
 			configPath := filepath.Join(ytsConfigDir, configFileName+"."+configFileType)
 			if err := viper.SafeWriteConfigAs(configPath); err != nil {
 				return fmt.Errorf("failed to write default config: %w", err)
@@ -127,9 +141,96 @@ func Initialize() error {
 		} else {
 			return fmt.Errorf("failed to read config: %w", err)
 		}
+	} else {
+		// Config exists, check for migrations
+		var cfg Config
+		if err := viper.Unmarshal(&cfg); err != nil {
+			return fmt.Errorf("failed to parse config: %w", err)
+		}
+
+		// Apply migrations if needed
+		if cfg.Version != currentConfigVersion {
+			applyMigrations(&cfg)
+
+			// Update viper with migrated config
+			for k, v := range structToMap(cfg) {
+				viper.Set(k, v)
+			}
+
+			// Save the updated config
+			if err := viper.WriteConfig(); err != nil {
+				return fmt.Errorf("failed to save migrated config: %w", err)
+			}
+
+			fmt.Fprintf(os.Stderr, "Configuration updated to version %s\n", currentConfigVersion)
+		}
 	}
 
 	return nil
+}
+
+// applyMigrations updates an existing config to the current version without losing user settings
+func applyMigrations(cfg *Config) {
+	// If there's no version or it's a new config, just set the current version
+	if cfg.Version == "" {
+		cfg.Version = currentConfigVersion
+		return
+	}
+
+	// Handle specific version migrations
+	switch cfg.Version {
+	case "1.0.0":
+		// Migrate from 1.0.0 to 1.1.0
+		if cfg.Queries.SystemPrompt == "" {
+			cfg.Queries = QueryConfig{
+				SystemPrompt: `You are analyzing a YouTube video transcript.
+Video title: "{{title}}"
+
+Question: {{query}}
+
+Provide a concise, accurate answer based ONLY on information contained in the transcript.
+If the transcript doesn't contain information to answer the question, clearly state this.
+Do not speculate beyond what's explicitly mentioned in the transcript.
+Reference specific details from the transcript to support your answer.`,
+			}
+		}
+		cfg.Version = "1.1.0"
+		// fallthrough
+
+		// Add future version migrations here with fallthrough to apply sequentially
+		// case "1.1.0":
+		//    // Migrate from 1.1.0 to 1.2.0
+		//    cfg.Version = "1.2.0"
+		//    fallthrough
+	}
+}
+
+// Helper function to convert struct to map for viper
+func structToMap(obj interface{}) map[string]interface{} {
+	result := make(map[string]interface{})
+	val := reflect.ValueOf(obj)
+	if val.Kind() == reflect.Ptr {
+		val = val.Elem()
+	}
+	typ := val.Type()
+
+	for i := 0; i < val.NumField(); i++ {
+		field := val.Field(i)
+		tag := typ.Field(i).Tag.Get("mapstructure")
+		if tag != "" && tag != "-" {
+			if field.Kind() == reflect.Struct {
+				// Handle nested structs recursively
+				nested := structToMap(field.Interface())
+				for k, v := range nested {
+					result[tag+"."+k] = v
+				}
+			} else {
+				result[tag] = field.Interface()
+			}
+		}
+	}
+
+	return result
 }
 
 // GetConfig returns the current configuration
@@ -199,6 +300,16 @@ Preserve technical accuracy while ensuring readability. Include relevant quotes 
 - Do not correct spelling or grammar
 - Add paragraph breaks where appropriate
 - Do not otherwise modify the content in any way`)
+
+	viper.SetDefault("queries.system_prompt", `You are analyzing a YouTube video transcript.
+Video title: "{{title}}"
+
+Question: {{query}}
+
+Provide a concise, accurate answer based ONLY on information contained in the transcript.
+If the transcript doesn't contain information to answer the question, clearly state this.
+Do not speculate beyond what's explicitly mentioned in the transcript.
+Reference specific details from the transcript to support your answer.`)
 }
 
 func bindEnvVars() {

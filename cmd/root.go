@@ -12,17 +12,20 @@ import (
 	"github.com/conormkelly/yts-cli/internal/transcript"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 var (
 	longSummary bool
 	provider    string // ollama, LM Studio etc
 	outputFile  string
+	query       string
 )
 
 var rootCmd = &cobra.Command{
 	Use:   "yts [youtube-url]",
-	Short: "Summarize YouTube video transcripts",
+	Short: "Summarize YouTube video transcripts or answer specific questions",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		videoURL := args[0]
@@ -45,13 +48,6 @@ var rootCmd = &cobra.Command{
 			return fmt.Errorf("failed to initialize llm client: %v", err)
 		}
 
-		// Get appropriate system prompt based on resolved summary type
-		resolvedSummaryType := getSummaryType()
-		systemPrompt := config.GetSystemPrompt(resolvedSummaryType)
-		if systemPrompt == "" {
-			return fmt.Errorf("failed to get system prompt for summary type: %s", resolvedSummaryType)
-		}
-
 		// Fetch transcript
 		title, transcript, err := fetcher.Fetch(videoURL)
 		if err != nil {
@@ -60,28 +56,53 @@ var rootCmd = &cobra.Command{
 
 		fmt.Printf("\nTitle: %s\n\n", title)
 
+		// Determine mode and get appropriate system prompt
+		var mode string
+		var systemPrompt string
+
+		if query != "" {
+			// Query mode
+			mode = "query"
+			systemPrompt = cfg.Queries.SystemPrompt
+			// Replace placeholders with actual values
+			systemPrompt = strings.ReplaceAll(systemPrompt, "{{title}}", title)
+			systemPrompt = strings.ReplaceAll(systemPrompt, "{{query}}", query)
+
+			// Display query
+			fmt.Printf("Question: %s\n\n", query)
+		} else {
+			// Summary mode
+			mode = "summary"
+			resolvedSummaryType := getSummaryType()
+			systemPrompt = config.GetSystemPrompt(resolvedSummaryType)
+			if systemPrompt == "" {
+				return fmt.Errorf("failed to get system prompt for summary type: %s", resolvedSummaryType)
+			}
+		}
+
+		// Process transcript text
 		var transcriptText strings.Builder
 		for i := range transcript {
 			transcriptText.WriteString(transcript[i].Text + "\n")
 		}
 
-		// Generate summary using streaming
-		var summary strings.Builder
+		// Generate response using streaming
+		var response strings.Builder
 		err = llmClient.Stream(systemPrompt, transcriptText.String(), func(chunk string) {
 			fmt.Print(chunk)
-			summary.WriteString(chunk)
+			response.WriteString(chunk)
 		})
 		if err != nil {
-			return fmt.Errorf("failed to generate summary: %v", err)
+			return fmt.Errorf("failed to generate %s: %v", mode, err)
 		}
 		// Add newline
-		summary.WriteString("\n")
+		response.WriteString("\n")
 		fmt.Println()
 
 		// Handle output file if specified
 		if outputFile != "" {
 			// Handle home directory expansion
-			if outputFile[:2] == "~/" {
+			if len(outputFile) >= 2 && outputFile[:2] == "~/" {
 				homeDir, err := os.UserHomeDir()
 				if err != nil {
 					return fmt.Errorf("failed to get home directory: %v", err)
@@ -95,10 +116,23 @@ var rootCmd = &cobra.Command{
 				return fmt.Errorf("failed to create output directory: %v", err)
 			}
 
-			if err := os.WriteFile(outputFile, []byte(title+"\n\n"+summary.String()), 0644); err != nil {
+			// Create output content based on mode
+			var outputContent string
+			if mode == "query" {
+				outputContent = fmt.Sprintf("Title: %s\n\nQuestion: %s\n\n%s",
+					title, query, response.String())
+			} else {
+				outputContent = fmt.Sprintf("Title: %s\n\n%s",
+					title, response.String())
+			}
+
+			if err := os.WriteFile(outputFile, []byte(outputContent), 0644); err != nil {
 				return fmt.Errorf("failed to write output file: %v", err)
 			}
-			fmt.Printf("\nSummary saved to %s\n", outputFile)
+
+			// Use cases.Title instead of strings.Title
+			caser := cases.Title(language.English)
+			fmt.Printf("\n%s saved to %s\n", caser.String(mode), outputFile)
 		}
 
 		return nil
@@ -118,6 +152,7 @@ func init() {
 	rootCmd.Flags().StringVarP(&provider, "provider", "p", "", "LLM provider (lmstudio, ollama)")
 	rootCmd.Flags().BoolVarP(&longSummary, "long", "l", false, "Generate a detailed summary")
 	rootCmd.Flags().StringVarP(&outputFile, "output", "o", "", "output file path")
+	rootCmd.Flags().StringVarP(&query, "query", "q", "", "Ask a specific question about the video content")
 
 	// Bind provider flag to viper
 	viper.BindPFlag("provider", rootCmd.Flags().Lookup("provider"))

@@ -6,6 +6,7 @@ A powerful command-line tool that leverages AI to turn YouTube video transcripts
 
 - 🎯 Extract transcripts from any YouTube video with available captions
 - 🤖 Generate AI-powered summaries using your choice of local or cloud LLMs
+- 🔍 Ask specific questions about video content with the query mode
 - 📝 Multiple summary formats (concise or detailed analysis)
 - 🌍 Support for videos with auto-generated captions
 - ⚡ Real-time streaming output as summaries are generated
@@ -23,6 +24,7 @@ A powerful command-line tool that leverages AI to turn YouTube video transcripts
 
    # Windows
    irm https://raw.githubusercontent.com/conormkelly/yts-cli/main/install.ps1 | iex
+   ```
 
 2. Choose and set up a provider:
 
@@ -120,6 +122,43 @@ yts -l https://www.youtube.com/watch?v=video_id
 
 # Save to file
 yts https://www.youtube.com/watch?v=video_id -o summary.txt
+```
+
+### Query Video Content
+
+Ask specific questions about a video's content:
+
+```bash
+# Ask a question about the video
+yts https://www.youtube.com/watch?v=video_id -q "Does this video explain quantum computing?"
+
+# Save the query result to a file
+yts https://www.youtube.com/watch?v=video_id -q "What are the main points about climate change?" -o answer.txt
+```
+
+Query mode uses the video's title and transcript as context to provide accurate answers based solely on the video content. This is particularly useful for:
+
+- Fact-checking clickbait titles
+- Finding specific information in long videos
+- Evaluating video content before watching
+- Extracting technical details from educational content
+
+#### Example Query Output
+
+```txt
+Title: Understanding Climate Feedback Loops
+
+Question: What are the three main positive feedback loops mentioned?
+
+The three main positive feedback loops mentioned in the video are:
+
+1. Ice-Albedo Feedback Loop: As ice melts due to warming, dark ocean water is exposed, which absorbs more heat than reflective ice, leading to further warming and more ice melt.
+
+2. Water Vapor Feedback Loop: As temperatures rise, more water evaporates into the atmosphere. Since water vapor is a greenhouse gas, this increases warming, creating a self-reinforcing cycle.
+
+3. Permafrost Methane Release: As permafrost thaws in Arctic regions, it releases trapped methane, which is a potent greenhouse gas that causes additional warming, leading to more permafrost thaw.
+
+The video emphasizes that these positive feedback loops have the potential to accelerate climate change beyond current predictions if they reach tipping points.
 ```
 
 ### Example Output
@@ -250,6 +289,10 @@ yts config set providers.claude.temperature 0.7
 ```bash
 # Global
 provider                           # Active provider selection
+version                            # Configuration version
+
+# Query Settings
+queries.system_prompt              # Template for answering questions about videos
 
 # LM Studio Settings
 providers.lmstudio.base_url       # API endpoint
