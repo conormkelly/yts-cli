@@ -21,7 +21,9 @@ A powerful command-line tool that leverages AI to turn YouTube video transcripts
    ```bash
    # Linux/macOS
    curl -sSL https://raw.githubusercontent.com/conormkelly/yts-cli/main/install.sh | bash
+   ```
 
+   ```powershell
    # Windows
    irm https://raw.githubusercontent.com/conormkelly/yts-cli/main/install.ps1 | iex
    ```
@@ -31,7 +33,9 @@ A powerful command-line tool that leverages AI to turn YouTube video transcripts
    ```bash
    # For local providers (free, runs on your machine):
    yts config set provider lmstudio  # or ollama
-   
+   ```
+
+   ```bash
    # For cloud providers (requires API key):
    yts config set provider claude
    yts apikey set claude your-api-key
